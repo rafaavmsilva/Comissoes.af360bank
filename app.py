@@ -973,8 +973,4 @@ def print_comissoes():
         return redirect(url_for('comissoes'))
 
 if __name__ == '__main__':
-    app.config.update(
-        SERVER_NAME=None,
-        APPLICATION_ROOT='/'
-    )
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
