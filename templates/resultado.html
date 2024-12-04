@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CCB {{ ccb }} - Resultado da Busca</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .section-title {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            margin: 0;
+            border-bottom: 1px solid #e9ecef;
+            color: #2c3e50;
+            font-size: 1.2em;
+            font-weight: 500;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+        th, td {
+            padding: 12px 20px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+        th {
+            width: 200px;
+            background-color: #f8f9fa;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        td {
+            color: #34495e;
+        }
+        td a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        td a:hover {
+            text-decoration: underline;
+        }
+        .button-container {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: #2980b9;
+        }
+        .alert {
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .alert-error {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+        .alert-success {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            color: #166534;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <nav>
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="/" class="nav-link">
+                        <span class="material-icons nav-icon">upload_file</span>
+                        <span>Upload CSV</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/dados" class="nav-link">
+                        <span class="material-icons nav-icon">table_view</span>
+                        <span>Contratos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/comissoes" class="nav-link">
+                        <span class="material-icons nav-icon">paid</span>
+                        <span>Comissões</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/busca" class="nav-link active">
+                        <span class="material-icons nav-icon">search</span>
+                        <span>Buscar CCB</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/tabela" class="nav-link">
+                        <span class="material-icons nav-icon">calculate</span>
+                        <span>Tabela</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="logo-container">
+            <button onclick="clearAllData()" class="clear-data-button">
+                <span class="material-icons">delete_sweep</span>
+                Limpar Dados
+            </button>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="container">
+            <h2 class="titulo">CCB {{ ccb }} - Resultado da Busca</h2>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <div class="table-container">
+                {% if contrato %}
+                    {% for section, data in contrato.items() %}
+                        <h3 class="section-title">{{ section }}</h3>
+                        <table>
+                            <tbody>
+                                {% for campo, valor in data.items() %}
+                                <tr>
+                                    <th>{{ campo }}</th>
+                                    {% if campo == 'Link de assinatura' and valor %}
+                                        <td><a href="{{ valor }}" target="_blank">Abrir link <span class="material-icons" style="font-size: 16px; vertical-align: middle;">open_in_new</span></a></td>
+                                    {% else %}
+                                        <td>{{ valor }}</td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endfor %}
+                {% else %}
+                    <p style="padding: 20px; text-align: center; color: #666;">Nenhum resultado encontrado.</p>
+                {% endif %}
+            </div>
+            <div class="button-container">
+                <a href="/busca" class="back-button">
+                    <span class="material-icons">arrow_back</span>
+                    Nova Busca
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function clearAllData() {
+            if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
+                fetch('/limpar_dados', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Dados limpos com sucesso!');
+                        window.location.href = '/';
+                    } else {
+                        alert('Erro ao limpar dados: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Erro ao limpar dados. Por favor, tente novamente.');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comissões</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .filters {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        select, button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
+        .totals-bar {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .totals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .total-item {
+            text-align: center;
+        }
+        .total-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .total-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .botao-detalhes {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 4px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .botao-detalhes:hover {
+            background-color: var(--primary-color-dark);
+        }
+        .botao-detalhes .material-icons {
+            font-size: 20px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        @media print {
+            .sidebar, .filters, .action-buttons button {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 0;
+            }
+            
+            body {
+                background: white;
+            }
+            
+            .table-container {
+                overflow: visible;
+            }
+            
+            table {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <nav>
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="/" class="nav-link">
+                        <span class="material-icons nav-icon">upload_file</span>
+                        <span>Upload CSV</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/dados" class="nav-link">
+                        <span class="material-icons nav-icon">table_view</span>
+                        <span>Contratos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/comissoes" class="nav-link active">
+                        <span class="material-icons nav-icon">paid</span>
+                        <span>Comissões</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/busca" class="nav-link">
+                        <span class="material-icons nav-icon">search</span>
+                        <span>Buscar CCB</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/tabela" class="nav-link">
+                        <span class="material-icons nav-icon">calculate</span>
+                        <span>Tabela</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="logo-container">
+            <button onclick="clearAllData()" class="clear-data-button">
+                <span class="material-icons">delete_sweep</span>
+                Limpar Dados
+            </button>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="container" id="content-to-print">
+            <h2 class="titulo">Comissões</h2>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% if comissoes and comissoes|length > 0 %}
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="tabela-filter">Tabela:</label>
+                        <select id="tabela-filter">
+                            <option value="">Todas</option>
+                            {% for tabela in tabelas %}
+                                <option value="{{ tabela }}">{{ tabela }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="usuario-filter">Usuário:</label>
+                        <select id="usuario-filter">
+                            <option value="">Todos</option>
+                            {% for usuario in usuarios %}
+                                <option value="{{ usuario }}">{{ usuario }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <a href="{{ url_for('print_comissoes') }}" class="botao-detalhes" id="print-button" target="_blank">
+                        <span class="material-icons">print</span> Imprimir Relatório
+                    </a>
+                    <button onclick="clearAllData()" class="botao-detalhes">
+                        <span class="material-icons">clear</span> Limpar Filtros
+                    </button>
+                </div>
+
+                <div class="totals-bar">
+                    <div class="totals-grid">
+                        <div class="total-item">
+                            <div class="total-label">Total Bruto</div>
+                            <div class="total-value" id="total-bruto">
+                                {{ "R$ {:,.2f}".format(totais.bruto).replace(',', '_').replace('.', ',').replace('_', '.') }}
+                            </div>
+                        </div>
+                        <div class="total-item">
+                            <div class="total-label">Total Líquido</div>
+                            <div class="total-value" id="total-liquido">
+                                {{ "R$ {:,.2f}".format(totais.liquido).replace(',', '_').replace('.', ',').replace('_', '.') }}
+                            </div>
+                        </div>
+                        <div class="total-item">
+                            <div class="total-label">Total Comissão Recebida</div>
+                            <div class="total-value" id="total-comissao-recebida">
+                                {{ "R$ {:,.2f}".format(totais.comissao_recebida).replace(',', '_').replace('.', ',').replace('_', '.') }}
+                            </div>
+                        </div>
+                        <div class="total-item">
+                            <div class="total-label">Total Comissão Repassada</div>
+                            <div class="total-value" id="total-comissao-repassada">
+                                {{ "R$ {:,.2f}".format(totais.comissao_repassada).replace(',', '_').replace('.', ',').replace('_', '.') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if erros %}
+                <div class="alert alert-warning">
+                    <h4>Avisos de Processamento</h4>
+                    <ul>
+                    {% for erro in erros %}
+                        <li>
+                            <strong>CCB: {{ erro.ccb }}</strong>
+                            <ul>
+                                {% for tipo, mensagem in erro.erros.items() %}
+                                    <li>{{ mensagem }}</li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <div class="table-container">
+                    <table id="comissoes-table">
+                        <thead>
+                            <tr>
+                                <th>CCB</th>
+                                <th>Cliente</th>
+                                <th>Usuário</th>
+                                <th>Tabela</th>
+                                <th>Valor Bruto</th>
+                                <th>Valor Líquido</th>
+                                <th>Comissão Recebida</th>
+                                <th>Comissão Repassada</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in comissoes %}
+                            <tr class="{% if item.get('erros') %}warning{% endif %}">
+                                <td>{{ item.get('CCB', 'N/A') }}</td>
+                                <td>{{ item.get('Cliente', 'N/A') }}</td>
+                                <td>{{ item.get('Usuario', item.get('Usuário', 'N/A')) }}</td>
+                                <td>{{ item.get('Tabela', 'N/A') }}</td>
+                                <td>{{ "R$ {:,.2f}".format(item.get('Valor Bruto', 0)).replace(',', '_').replace('.', ',').replace('_', '.') }}</td>
+                                <td>{{ "R$ {:,.2f}".format(item.get('Valor Líquido', 0)).replace(',', '_').replace('.', ',').replace('_', '.') }}</td>
+                                <td>
+                                    {{ "R$ {:,.2f}".format(item.get('comissao_recebida_valor', 0)).replace(',', '_').replace('.', ',').replace('_', '.') }}
+                                    ({{ "{:.2f}%".format(item.get('comissao_recebida_percentual', 0)).replace('.', ',') }})
+                                </td>
+                                <td>
+                                    {{ "R$ {:,.2f}".format(item.get('comissao_repassada_valor', 0)).replace(',', '_').replace('.', ',').replace('_', '.') }}
+                                    ({{ "{:.2f}%".format(item.get('comissao_repassada_percentual', 0)).replace('.', ',') }})
+                                </td>
+                                <td>
+                                    {% if item.get('erros') %}
+                                        <span class="badge badge-warning">Atenção</span>
+                                    {% else %}
+                                        <span class="badge badge-success">OK</span>
+                                    {% endif %}
+                                </td>
+                                <td class="action-buttons">
+                                    <a href="{{ url_for('resultado', ccb=item.get('CCB', '')) }}" class="botao-detalhes">
+                                        <span class="material-icons">visibility</span>
+                                    </a>
+                                    <button onclick="window.print()" class="botao-detalhes">
+                                        <span class="material-icons">print</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <h4>Nenhum Dado Registrado</h4>
+                    <p>Não há dados disponíveis no momento. Por favor, faça o upload de um arquivo CSV primeiro.</p>
+                    <a href="{{ url_for('index') }}" class="botao-detalhes">
+                        <span class="material-icons">upload_file</span> Fazer Upload
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
+
+        function updateTotals() {
+            const rows = document.querySelectorAll('#comissoes-table tbody tr:not([style*="display: none"])');
+            let totalBruto = 0;
+            let totalLiquido = 0;
+            let totalComissaoRecebida = 0;
+            let totalComissaoRepassada = 0;
+
+            rows.forEach(row => {
+                totalBruto += parseFloat(row.children[4].textContent.replace('R$', '').replace(/\./g, '').replace(',', '.').trim());
+                totalLiquido += parseFloat(row.children[5].textContent.replace('R$', '').replace(/\./g, '').replace(',', '.').trim());
+                
+                const comissaoRecebida = row.children[6].textContent.split('(')[0];
+                const comissaoRepassada = row.children[7].textContent.split('(')[0];
+                
+                totalComissaoRecebida += parseFloat(comissaoRecebida.replace('R$', '').replace(/\./g, '').replace(',', '.').trim());
+                totalComissaoRepassada += parseFloat(comissaoRepassada.replace('R$', '').replace(/\./g, '').replace(',', '.').trim());
+            });
+
+            document.getElementById('total-bruto').textContent = formatCurrency(totalBruto);
+            document.getElementById('total-liquido').textContent = formatCurrency(totalLiquido);
+            document.getElementById('total-comissao-recebida').textContent = formatCurrency(totalComissaoRecebida);
+            document.getElementById('total-comissao-repassada').textContent = formatCurrency(totalComissaoRepassada);
+        }
+
+        document.getElementById('tabela-filter').addEventListener('change', function() {
+            const tabelaValue = this.value.toLowerCase();
+            const usuarioValue = document.getElementById('usuario-filter').value.toLowerCase();
+            filterTable(tabelaValue, usuarioValue);
+        });
+
+        document.getElementById('usuario-filter').addEventListener('change', function() {
+            const usuario = this.value;
+            const printButton = document.getElementById('print-button');
+            
+            if (usuario) {
+                printButton.href = "{{ url_for('print_comissoes') }}?usuario=" + encodeURIComponent(usuario);
+            } else {
+                printButton.href = "{{ url_for('print_comissoes') }}";
+            }
+            
+            const tabelaValue = document.getElementById('tabela-filter').value.toLowerCase();
+            filterTable(tabelaValue, usuario.toLowerCase());
+        });
+
+        function filterTable(tabela, usuario) {
+            const rows = document.querySelectorAll('#comissoes-table tbody tr');
+            
+            rows.forEach(row => {
+                const tabelaCell = row.children[3].textContent.toLowerCase();
+                const usuarioCell = row.children[2].textContent.toLowerCase();
+                
+                const tabelaMatch = !tabela || tabelaCell.includes(tabela);
+                const usuarioMatch = !usuario || usuarioCell.includes(usuario);
+                
+                row.style.display = (tabelaMatch && usuarioMatch) ? '' : 'none';
+            });
+            
+            updateTotals();
+        }
+
+        function clearAllData() {
+            document.getElementById('tabela-filter').value = '';
+            document.getElementById('usuario-filter').value = '';
+            filterTable('', '');
+        }
+
+        // Initial totals calculation
+        updateTotals();
+    </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Buscar CCB</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <style>
+            .search-container {
+                max-width: 500px;
+                margin: 0 auto;
+                padding: 20px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+    
+            .search-form {
+                display: flex;
+                gap: 10px;
+            }
+    
+            .search-input {
+                flex: 1;
+                padding: 10px;
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                font-size: 16px;
+            }
+    
+            .search-button {
+                padding: 10px 20px;
+                background-color: var(--primary-color);
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                transition: background-color 0.3s;
+            }
+    
+            .search-button:hover {
+                background-color: #45a049;
+            }
+    
+            .error-message {
+                display: none;
+                margin-top: 20px;
+                padding: 15px;
+                background-color: #ffebee;
+                border-left: 4px solid var(--error-color);
+                color: var(--error-color);
+                border-radius: 4px;
+            }
+    
+            .error-message.show {
+                display: block;
+                animation: fadeIn 0.3s ease-in-out;
+            }
+    
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+    </head>
+<body>
+    <aside class="sidebar">
+        <nav>
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="/" class="nav-link">
+                        <span class="material-icons nav-icon">upload_file</span>
+                        <span>Upload CSV</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/dados" class="nav-link">
+                        <span class="material-icons nav-icon">table_view</span>
+                        <span>Contratos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/comissoes" class="nav-link">
+                        <span class="material-icons nav-icon">paid</span>
+                        <span>Comissões</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/busca" class="nav-link active">
+                        <span class="material-icons nav-icon">search</span>
+                        <span>Buscar CCB</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/tabela" class="nav-link">
+                        <span class="material-icons nav-icon">calculate</span>
+                        <span>Tabela</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="logo-container">
+            <button onclick="clearAllData()" class="clear-data-button">
+                <span class="material-icons">delete_sweep</span>
+                Limpar Dados
+            </button>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="container">
+            <h2 class="titulo">Buscar CCB</h2>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="search-container">
+                <form action="{{ url_for('resultado') }}" method="get" class="search-form" onsubmit="return validateForm()">
+                    <input type="text" name="ccb" id="ccb" class="search-input" placeholder="Digite o número da CCB" required>
+                    <button type="submit" class="search-button">
+                        <span class="material-icons">search</span>
+                        Buscar
+                    </button>
+                </form>
+                <div id="errorMessage" class="error-message">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 5px;">error_outline</span>
+                    CCB não encontrada no sistema.
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        function validateForm() {
+            const ccbInput = document.getElementById('ccb').value.trim();
+            const errorMessage = document.getElementById('errorMessage');
+            const form = document.querySelector('.search-form');
+            
+            // Make an AJAX request to check if the CCB exists
+            fetch(`/verificar_ccb/${ccbInput}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.exists) {
+                        errorMessage.classList.add('show');
+                    } else {
+                        errorMessage.classList.remove('show');
+                        window.location.href = `/resultado?ccb=${ccbInput}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    errorMessage.classList.add('show');
+                });
+
+            // Prevent default form submission
+            return false;
+        }
+
+        function clearAllData() {
+            if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
+                fetch('/limpar_dados', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Dados limpos com sucesso!');
+                        location.reload();
+                    } else {
+                        alert('Erro ao limpar dados: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Erro ao limpar dados. Por favor, tente novamente.');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comissões - Impressão</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --primary-color-dark: #1976D2;
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: white;
+            color: #333;
+            line-height: 1.6;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+
+        h2.titulo {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .totals-bar {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .totals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .total-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .total-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .total-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-bottom: 30px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            min-width: 800px;
+            border-collapse: collapse;
+            margin: 0;
+            background: white;
+            table-layout: fixed;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        th:nth-child(1), td:nth-child(1) { width: 10%; } /* CCB */
+        th:nth-child(2), td:nth-child(2) { width: 15%; } /* Usuario */
+        th:nth-child(3), td:nth-child(3) { width: 25%; } /* Cliente */
+        th:nth-child(4), td:nth-child(4) { width: 15%; } /* Valor */
+        th:nth-child(5), td:nth-child(5) { width: 15%; } /* Tabela */
+        th:nth-child(6), td:nth-child(6) { width: 10%; } /* Comissao */
+        th:nth-child(7), td:nth-child(7) { width: 10%; } /* Repasse */
+
+        @media print {
+            @page {
+                size: landscape;
+                margin: 10mm;
+            }
+
+            body {
+                padding: 0;
+                margin: 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .container {
+                width: 100%;
+                max-width: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .table-container {
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                overflow: visible;
+            }
+
+            table {
+                width: 100% !important;
+                min-width: 100% !important;
+                page-break-inside: auto;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+
+            th, td {
+                padding: 8px;
+                font-size: 11pt;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            tfoot {
+                display: table-footer-group;
+            }
+
+            th {
+                background-color: #f2f2f2 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color: black !important;
+            }
+
+            td {
+                color: black !important;
+            }
+
+            .totals-bar {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                margin: 20px 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .total-item {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+
+            .total-value {
+                color: black !important;
+            }
+
+            h2.titulo {
+                color: black !important;
+                margin: 20px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="titulo">Relatório de Comissões</h2>
+
+        <div class="totals-bar">
+            <div class="totals-grid">
+                <div class="total-item">
+                    <div class="total-label">Total de Contratos</div>
+                    <div class="total-value" id="total-contratos">0</div>
+                </div>
+                <div class="total-item">
+                    <div class="total-label">Total de Comissões</div>
+                    <div class="total-value" id="total-comissoes">R$ 0,00</div>
+                </div>
+                <div class="total-item">
+                    <div class="total-label">Total Repassado</div>
+                    <div class="total-value" id="total-repassado">R$ 0,00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>CCB</th>
+                        <th>Usuário</th>
+                        <th>Cliente</th>
+                        <th>Valor</th>
+                        <th>Tabela</th>
+                        <th>Comissão</th>
+                        <th>Repasse</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in comissoes %}
+                    <tr>
+                        <td>{{ item.get('CCB', 'N/A') }}</td>
+                        <td>{{ item.get('Usuário', item.get('Usuario', 'N/A')) }}</td>
+                        <td>{{ item.get('Cliente', 'N/A') }}</td>
+                        <td>R$ {{ "%.2f"|format(item.get('Valor Bruto', 0)|float) }}</td>
+                        <td>{{ item.get('Tabela', 'N/A') }}</td>
+                        <td>R$ {{ "%.2f"|format(item.get('comissao_recebida_valor', 0)|float) }}</td>
+                        <td>R$ {{ "%.2f"|format(item.get('comissao_repassada_valor', 0)|float) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function formatCurrency(value) {
+            // Round to 2 decimal places before formatting
+            const roundedValue = Math.round(value * 100) / 100;
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(roundedValue);
+        }
+
+        function parseMoneyValue(text) {
+            if (!text) return 0;
+            try {
+                // Remove R$, spaces, dots, and convert comma to dot
+                const cleanText = text.replace(/[R$\s.]/g, '').replace(',', '.');
+                // Parse as float and ensure 2 decimal precision
+                const value = parseFloat(cleanText);
+                if (isNaN(value)) return 0;
+                // Round to 2 decimal places to match Python's decimal precision
+                return Math.round(value) / 100;
+            } catch (error) {
+                console.error('Error parsing money value:', error, text);
+                return 0;
+            }
+        }
+
+        function updateTotals() {
+            const rows = document.querySelectorAll('table tbody tr');
+            let totalContratos = rows.length;
+            let totalComissoes = 0;
+            let totalRepassado = 0;
+
+            rows.forEach((row, index) => {
+                try {
+                    // Get comissão value (column 6)
+                    const comissaoText = row.cells[5].textContent;
+                    const comissaoRecebida = parseMoneyValue(comissaoText);
+                    
+                    // Get repasse value (column 7)
+                    const repasseText = row.cells[6].textContent;
+                    const comissaoRepassada = parseMoneyValue(repasseText);
+                    
+                    // Use integer math to avoid floating point issues
+                    totalComissoes = Math.round((totalComissoes + comissaoRecebida) * 100) / 100;
+                    totalRepassado = Math.round((totalRepassado + comissaoRepassada) * 100) / 100;
+
+                    console.debug(`Row ${index + 1} values:`, {
+                        originalComissao: comissaoText,
+                        parsedComissao: comissaoRecebida,
+                        originalRepasse: repasseText,
+                        parsedRepasse: comissaoRepassada,
+                        runningTotalComissoes: totalComissoes,
+                        runningTotalRepassado: totalRepassado
+                    });
+                } catch (error) {
+                    console.error('Error processing row:', error, row);
+                }
+            });
+
+            // Update the totals display
+            document.getElementById('total-contratos').textContent = totalContratos;
+            document.getElementById('total-comissoes').textContent = formatCurrency(totalComissoes);
+            document.getElementById('total-repassado').textContent = formatCurrency(totalRepassado);
+            
+            console.log('Final totals:', {
+                contratos: totalContratos,
+                comissoes: formatCurrency(totalComissoes),
+                repassado: formatCurrency(totalRepassado)
+            });
+        }
+
+        // Wait for the DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, updating totals...');
+            try {
+                updateTotals();
+                // Wait a moment for the totals to update before printing
+                setTimeout(() => {
+                    console.log('Triggering print...');
+                    window.print();
+                }, 1000);
+            } catch (error) {
+                console.error('Error in DOMContentLoaded:', error);
+            }
+        });
+    </script>
+</body>
+</html>
