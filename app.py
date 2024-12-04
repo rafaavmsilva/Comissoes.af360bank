@@ -471,7 +471,7 @@ def index():
         else:
             flash('Tipo de arquivo não suportado. Use arquivos CSV ou Excel.', 'error')
             
-    return render_template('index.html')
+    return render_template('Index.html')
 
 @app.route('/dados')
 def dados():
