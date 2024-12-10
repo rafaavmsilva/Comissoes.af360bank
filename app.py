@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from auth_client import AuthClient
 import pandas as pd
 from decimal import Decimal, InvalidOperation
 from typing import Dict, List, Optional
@@ -39,7 +40,18 @@ from PIL import Image, ImageEnhance
 import cv2
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'development_key')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+
+# Initialize auth client
+auth = AuthClient(
+    auth_server_url='http://localhost:5000',  # Change this to your AF360 Bank auth server URL in production
+    app_name='sistema-comissoes'
+)
+auth.init_app(app)
+
+# Configure session
+app.config['SESSION_TYPE'] = 'filesystem'
+Session(app)
 
 # Configure session and app
 app.config.update(
@@ -50,10 +62,6 @@ app.config.update(
     SESSION_REFRESH_EACH_REQUEST=True,
     MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max file size
 )
-
-# Configure session interface for larger data
-app.config['SESSION_TYPE'] = 'filesystem'
-Session(app)
 
 # Configure logging
 if not app.debug:
@@ -444,6 +452,7 @@ def calcular_comissoes(dados: List[Dict]):
     return comissoes
 
 @app.route('/', methods=['GET', 'POST'])
+@auth.login_required
 def index():
     """Handle the main page and file upload."""
     if request.method == 'POST':
@@ -474,6 +483,7 @@ def index():
     return render_template('Index.html')
 
 @app.route('/dados')
+@auth.login_required
 def dados():
     """Display uploaded data."""
     dados = session.get('dados')
@@ -482,6 +492,7 @@ def dados():
     return render_template('dados.html', dados=dados)
 
 @app.route('/comissoes')
+@auth.login_required
 def comissoes():
     """Calculate and display commissions."""
     try:
@@ -535,6 +546,7 @@ def comissoes():
         return redirect(url_for('index'))
 
 @app.route('/tabela', methods=['GET'])
+@auth.login_required
 def tabela():
     """Render the table configuration page."""
     dados = session.get('dados')
@@ -559,6 +571,7 @@ def tabela():
     return render_template('tabela.html', tabelas=tabelas_data)
 
 @app.route('/salvar_tabela', methods=['POST'])
+@auth.login_required
 def salvar_tabela():
     """Save table configuration for both percentage-based and fixed commission."""
     try:
@@ -632,7 +645,8 @@ def salvar_tabela():
         flash('Erro ao salvar configuração', 'error')
         return redirect(url_for('tabela'))
 
-@app.route('/resultado', methods=['GET', 'POST'])
+@app.route('/resultado')
+@auth.login_required
 def resultado():
     """Display contract details."""
     dados = session.get('dados')
@@ -684,6 +698,7 @@ def resultado():
     return redirect(url_for('busca'))
 
 @app.route('/busca')
+@auth.login_required
 def busca():
     """Render the search page."""
     dados = session.get('dados')
