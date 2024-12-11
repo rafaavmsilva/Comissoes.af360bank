@@ -98,7 +98,7 @@ def auth():
         return redirect('https://af360bank.onrender.com/login')
     
     # Set session variables
-    session['user'] = verification.get('user')  # Store user data
+    session['user'] = verification.get('data')  # Store the data from verification
     session['token'] = token
     session['authenticated'] = True
     session.permanent = True  # Make the session last longer
