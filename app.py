@@ -46,6 +46,12 @@ import cv2
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
+# Configure session
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)  # Sessions last 24 hours
+Session(app)
+
 # Initialize auth client
 auth_client = AuthClient(
     auth_server_url=os.getenv('AUTH_SERVER_URL', 'https://af360bank.onrender.com'),
@@ -56,17 +62,11 @@ auth_client.init_app(app)
 # Use auth_client's login_required decorator
 login_required = auth_client.login_required
 
-# Configure session
-app.config['SESSION_TYPE'] = 'filesystem'
-Session(app)
-
 # Configure session and app
 app.config.update(
     SESSION_COOKIE_SECURE=True,  # Only send cookies over HTTPS
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
-    PERMANENT_SESSION_LIFETIME=1800,  # 30 minutes
-    SESSION_REFRESH_EACH_REQUEST=True,
     MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max file size
 )
 
@@ -90,6 +90,21 @@ if not app.debug:
 if app.debug:
     app.logger.setLevel(logging.DEBUG)
 
+@app.before_request
+def before_request():
+    """Ensure session is initialized with required data structures."""
+    # Initialize session data if not exists
+    if 'dados' not in session:
+        session['dados'] = []
+    if 'comissoes' not in session:
+        session['comissoes'] = {}
+    if 'tabela_config' not in session:
+        session['tabela_config'] = {}
+        set_default_commission_config()
+    
+    # Always mark session as modified to ensure changes are saved
+    session.modified = True
+
 @app.route('/auth')
 def auth():
     token = request.args.get('token')
@@ -107,18 +122,6 @@ def auth():
     session.permanent = True  # Make the session last longer
     
     return redirect(url_for('index'))
-
-@app.before_request
-def before_request():
-    """Ensure session is initialized with required data structures."""
-    if 'dados' not in session:
-        session['dados'] = []
-    if 'comissoes' not in session:
-        session['comissoes'] = {}
-    if 'tabela_config' not in session:
-        session['tabela_config'] = {}
-        set_default_commission_config()
-    session.modified = True
 
 def set_default_commission_config():
     """Set default commission configurations for different tables."""
