@@ -115,19 +115,9 @@ def auth():
     if not verification or not verification.get('valid'):
         return redirect('https://af360bank.onrender.com/login')
     
-    # Get user data from verification response
-    token_data = verification.get('data', {})
-    user_data = token_data.get('user')
-    
-    if not user_data:
-        return redirect('https://af360bank.onrender.com/login')
-    
     # Set session variables
-    session['user'] = user_data
     session['token'] = token
-    session['authenticated'] = True
-    session.permanent = True  # Make the session last longer
-    
+    session.permanent = True
     return redirect(url_for('index'))
 
 def set_default_commission_config():
