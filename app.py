@@ -45,63 +45,12 @@ import cv2
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)  # Set session lifetime to 1 hour
 
 # Initialize auth client
 auth = AuthClient(
-    auth_server_url='http://localhost:5000',  # Change this to your AF360 Bank auth server URL in production
-    app_name='sistema-comissoes'
+    auth_server_url='https://af360bank.onrender.com',  # Change this to your AF360 Bank auth server URL in production
 )
-auth.init_app(app)
-
-# Configure session
-app.config['SESSION_TYPE'] = 'filesystem'
-Session(app)
-
-# Configure session and app
-app.config.update(
-    SESSION_COOKIE_SECURE=False,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax',
-    PERMANENT_SESSION_LIFETIME=1800,  # 30 minutes
-    SESSION_REFRESH_EACH_REQUEST=True,
-    MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max file size
-)
-
-# Configure logging
-if not app.debug:
-    # Ensure the logs directory exists
-    if not os.path.exists('logs'):
-        os.makedirs('logs')
-    
-    # Create a file handler
-    file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
-    file_handler.setFormatter(logging.Formatter(
-        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-    ))
-    file_handler.setLevel(logging.INFO)
-    app.logger.addHandler(file_handler)
-    app.logger.setLevel(logging.INFO)
-    app.logger.info('App startup')
-
-# Configure debug logging
-if app.debug:
-    app.logger.setLevel(logging.DEBUG)
-
-def verify_token(token):
-    try:
-        serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-        data = serializer.loads(token, max_age=300)  # Token expires in 5 minutes
-        return data['destination'] == 'comissoes'
-    except:
-        return False
-
-@app.route('/auth')
-def auth():
-    token = request.args.get('token')
-    if not token or not verify_token(token):
-        return redirect('https://af360bank.onrender.com/login')
-    session['authenticated'] = True
-    return redirect(url_for('index'))
 
 def login_required(f):
     @wraps(f)
@@ -111,377 +60,20 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@app.before_request
-def before_request():
-    """Ensure session is initialized with required data structures."""
-    if 'dados' not in session:
-        session['dados'] = []
-    if 'comissoes' not in session:
-        session['comissoes'] = {}
-    if 'tabela_config' not in session:
-        session['tabela_config'] = {}
-        set_default_commission_config()
-    session.modified = True
-
-def set_default_commission_config():
-    """Set default commission configurations for different tables."""
-    default_config = {
-        'BRAVE 1 - 50 a 250': {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 28,
-            'comissao_repassada': 26,
-            'valor_minimo': 50,
-            'valor_maximo': 250
-        },
-        'BRAVE 2 - 250,01 - 3800': {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 24,
-            'comissao_repassada': 22,
-            'valor_minimo': 250.01,
-            'valor_maximo': 3800
-        },
-        'BRAVE 3 - 3800,01 - 30.000': {
-            'tipo_comissao': 'fixa',
-            'comissao_fixa_recebida': 1200,
-            'comissao_fixa_repassada': 1050,
-            'valor_minimo': 3800.01,
-            'valor_maximo': 30000
-        },
-        'BRAVE DIFERENCIADA - COM REDUÇÃO': {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 8,
-            'comissao_repassada': 6,
-            'valor_minimo': 0,
-            'valor_maximo': float('inf')
-        },
-        'VIA INVEST 1 - 75 A 250': {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 26,
-            'comissao_repassada': 24,
-            'valor_minimo': 75,
-            'valor_maximo': 250
-        },
-        'VIA INVEST 2 - 250,01 A 1.000': {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 21,
-            'comissao_repassada': 19,
-            'valor_minimo': 250.01,
-            'valor_maximo': 1000
-        },
-        'VIA INVEST 3 - 1.000,01 A 30.000': {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 15,
-            'comissao_repassada': 13,
-            'valor_minimo': 1000.01,
-            'valor_maximo': 30000
-        },
-        'VIA INVEST DIF - COM REDUÇAO': {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 10,
-            'comissao_repassada': 8,
-            'valor_minimo': 0,
-            'valor_maximo': float('inf')
-        },
-        'Via AF - TC Diferenciada': {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 0,
-            'comissao_repassada': 0,
-            'valor_minimo': 0,
-            'valor_maximo': float('inf')
-        },
-        'NÃO COMISSIONADO': {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 0,
-            'comissao_repassada': 0,
-            'valor_minimo': 0,
-            'valor_maximo': float('inf')
-        }
-    }
+@app.route('/auth')
+def auth_route():
+    token = request.args.get('token')
+    if not token or not auth.verify_token(token):
+        return redirect('https://af360bank.onrender.com/login')
     
-    session['tabela_config'] = default_config
-    session.modified = True
-
-def is_valid_file(filename: str) -> bool:
-    """Validate if the file is a CSV or Excel file."""
-    if not '.' in filename:
-        return False
-    ext = filename.rsplit('.', 1)[1].lower()
-    return ext in ['csv', 'xls', 'xlsx']
-
-def read_file(file):
-    """Read CSV or Excel file into a pandas DataFrame."""
-    try:
-        if file.filename.endswith('.csv'):
-            df = pd.read_csv(file, encoding='utf-8-sig')
-        elif file.filename.endswith(('.xls', '.xlsx')):
-            df = pd.read_excel(file)
-        else:
-            raise ValueError("Formato de arquivo não suportado")
-        
-        if df.empty:
-            return None
-            
-        # Convert DataFrame to list of dictionaries
-        dados = df.replace({pd.NA: None}).to_dict('records')
-        
-        # Log converted data
-        app.logger.info(f"Converted data sample: {dados[:2] if dados else 'No data'}")
-        
-        return dados
-    except Exception as e:
-        app.logger.error(f"Erro ao ler arquivo: {str(e)}")
-        raise e
-
-def convert_to_float(value: str) -> float:
-    """Convert a Brazilian currency string to float."""
-    try:
-        if value is None or pd.isna(value):
-            return 0.0
-        if isinstance(value, (int, float)):
-            return float(value)
-        # Remove any non-numeric characters except comma and dot
-        value = ''.join(c for c in str(value) if c.isdigit() or c in '.,')
-        if not value:  # Se não houver números após a limpeza
-            return 0.0
-        # Replace comma with dot for float conversion
-        value = value.replace('.', '').replace(',', '.')
-        if not value:  # Se ainda não houver números
-            return 0.0
-        return float(value)
-    except Exception as e:
-        app.logger.error(f'Erro ao converter valor {value} para float: {str(e)}')
-        return 0.0
-
-def format_currency(value: any) -> str:
-    """Format a number as Brazilian currency."""
-    if value is None or pd.isna(value):
-        return ''
-    try:
-        if isinstance(value, str):
-            value = convert_to_float(value)
-        return f"R$ {float(value):,.2f}".replace(',', '_').replace('.', ',').replace('_', '.')
-    except (ValueError, TypeError):
-        return ''
-
-def format_client_name(nome: str, documento: str) -> str:
-    """Format client name with document number."""
-    if not nome:
-        return ''
-    if documento:
-        return f"{nome} ({documento})"
-    return nome
-
-def get_table_config(tabela: str, valor: float = None):
-    """Get commission configuration for a table based on value range."""
-    try:
-        tabela_config = session.get('tabela_config', {})
-        
-        # Se não houver configuração, retorna configuração padrão
-        if not tabela_config:
-            return {
-                'tipo_comissao': 'percentual',
-                'comissao_recebida': 0,
-                'comissao_repassada': 0,
-                'nome_tabela': tabela
-            }
-        
-        # Se a tabela existir exatamente como está, retorna ela
-        if tabela in tabela_config:
-            config = tabela_config[tabela]
-            config['nome_tabela'] = tabela
-            return config
-            
-        # Se não encontrou a tabela exata, procura pela faixa de valor
-        for nome_tabela, config in tabela_config.items():
-            # Pula tabelas especiais
-            if nome_tabela in ['NÃO COMISSIONADO', 'Via AF - TC Diferenciada']:
-                continue
-                
-            # Se a tabela atual é diferenciada, só procura em tabelas diferenciadas
-            if 'DIFERENCIADA' in tabela or 'DIF' in tabela:
-                if 'DIFERENCIADA' not in nome_tabela and 'DIF' not in nome_tabela:
-                    continue
-            # Se a tabela atual é padrão (com números), só procura em tabelas padrão
-            else:
-                if 'DIFERENCIADA' in nome_tabela or 'DIF' in nome_tabela:
-                    continue
-            
-            valor_minimo = float(config.get('valor_minimo', 0))
-            valor_maximo = float(config.get('valor_maximo', float('inf')))
-            
-            # Verifica se é da mesma empresa (BRAVE ou VIA INVEST)
-            mesma_empresa = False
-            if tabela.startswith('BRAVE') and nome_tabela.startswith('BRAVE'):
-                mesma_empresa = True
-            elif tabela.startswith('VIA') and nome_tabela.startswith('VIA'):
-                mesma_empresa = True
-                
-            if mesma_empresa and valor and valor_minimo <= valor <= valor_maximo:
-                config['nome_tabela'] = nome_tabela
-                return config
-        
-        # Se não encontrou nenhuma tabela correspondente
-        return {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 0,
-            'comissao_repassada': 0,
-            'nome_tabela': tabela
-        }
-        
-    except Exception as e:
-        app.logger.error(f'Erro ao obter configuração da tabela {tabela}: {str(e)}')
-        return {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 0,
-            'comissao_repassada': 0,
-            'nome_tabela': tabela
-        }
-
-def calcular_comissoes(dados: List[Dict]):
-    """Calculate commissions based on provided data and table configurations."""
-    comissoes = {}
-    erros = []  # Lista para armazenar erros
+    # Set session variables
+    session['authenticated'] = True
+    session.permanent = True  # Make the session last longer
     
-    try:
-        for linha in dados:
-            ccb = linha.get("CCB", "")
-            erro_linha = {}
-            
-            # Validação e limpeza do CCB
-            if not ccb:
-                ccb = f"SEM_CCB_{len(comissoes)}"
-                erro_linha['ccb'] = 'CCB não encontrado'
-            
-            try:
-                # Validação e limpeza do valor bruto
-                valor_bruto = linha.get('Valor Bruto')
-                tabela = linha.get('Tabela', '')
-                
-                # Format client name
-                nome = linha.get('Nome', linha.get('nome', ''))
-                documento = linha.get('Documento', linha.get('documento', linha.get('CPF', '')))
-                linha['Cliente'] = format_client_name(nome, documento)
-                
-                if not tabela:
-                    erro_linha['tabela'] = 'Tabela não especificada'
-                    tabela = 'TABELA_PADRAO'  # Usar uma tabela padrão
-                
-                # Processamento do valor bruto
-                try:
-                    valor = convert_to_float(valor_bruto) if valor_bruto else 0
-                    if valor <= 0:
-                        erro_linha['valor'] = 'Valor Bruto inválido (zero ou negativo)'
-                        valor = 0
-                except (ValueError, TypeError) as e:
-                    erro_linha['valor'] = f'Erro ao converter Valor Bruto: {str(e)}'
-                    valor = 0
-                
-                linha['Valor Bruto'] = valor
-                
-                # Get table configuration based on value range
-                config = get_table_config(tabela, valor)
-                if not config:
-                    erro_linha['config'] = f'Configuração não encontrada para tabela {tabela}'
-                    config = {
-                        'tipo_comissao': 'percentual',
-                        'comissao_recebida': 0,
-                        'comissao_repassada': 0,
-                        'nome_tabela': tabela
-                    }
-                
-                # Cálculo das comissões
-                try:
-                    tipo_comissao = config.get('tipo_comissao', 'percentual')
-                    valor_liquido = linha.get('Valor Líquido', 0)
-                    if isinstance(valor_liquido, str):
-                        valor_liquido = convert_to_float(valor_liquido)
-                    
-                    # Garantir que valor_liquido seja um número
-                    if not valor_liquido or valor_liquido <= 0:
-                        valor_liquido = 0
-                        app.logger.warning(f"Valor líquido inválido para CCB {ccb}")
-                    
-                    if tipo_comissao == 'fixa':
-                        comissao_recebida_valor = float(config.get('comissao_fixa_recebida', 0))
-                        comissao_repassada_valor = float(config.get('comissao_fixa_repassada', 0))
-                        comissao_recebida_percentual = (comissao_recebida_valor / valor * 100) if valor > 0 else 0
-                        comissao_repassada_percentual = (comissao_repassada_valor / valor_liquido * 100) if valor_liquido > 0 else 0
-                    else:
-                        # Pegar as porcentagens da configuração
-                        comissao_recebida_percentual = float(config.get('comissao_recebida', 0))
-                        comissao_repassada_percentual = float(config.get('comissao_repassada', 0))
-                        
-                        # Calcular valores - recebida sobre bruto, repassada sobre líquido
-                        comissao_recebida_valor = valor * (comissao_recebida_percentual / 100)
-                        comissao_repassada_valor = valor_liquido * (comissao_repassada_percentual / 100)
-                        
-                        app.logger.debug(f"""
-                        CCB: {ccb}
-                        Valor Bruto: {valor}
-                        Valor Líquido: {valor_liquido}
-                        Comissão Recebida %: {comissao_recebida_percentual}
-                        Comissão Repassada %: {comissao_repassada_percentual}
-                        Comissão Recebida Valor: {comissao_recebida_valor}
-                        Comissão Repassada Valor: {comissao_repassada_valor}
-                        """)
-                
-                    if 'nome_tabela' in config:
-                        linha['Tabela'] = config['nome_tabela']
-                    
-                    linha['comissao_recebida_valor'] = comissao_recebida_valor
-                    linha['comissao_repassada_valor'] = comissao_repassada_valor
-                    linha['comissao_recebida_percentual'] = comissao_recebida_percentual
-                    linha['comissao_repassada_percentual'] = comissao_repassada_percentual
-                    linha['tipo_comissao'] = tipo_comissao
-                    
-                except (ValueError, TypeError) as e:
-                    erro_linha['calculo'] = f'Erro ao calcular comissões: {str(e)}'
-                    linha['comissao_recebida_valor'] = 0
-                    linha['comissao_repassada_valor'] = 0
-                    linha['comissao_recebida_percentual'] = 0
-                    linha['comissao_repassada_percentual'] = 0
-                    linha['tipo_comissao'] = 'percentual'
-                
-                # Convert other monetary values
-                for campo in ['Valor Parcela', 'Valor Líquido']:
-                    if campo in linha:
-                        try:
-                            linha[campo] = convert_to_float(linha[campo])
-                        except (ValueError, TypeError) as e:
-                            erro_linha[f'conversao_{campo}'] = f'Erro ao converter {campo}: {str(e)}'
-                            linha[campo] = 0.0
-                
-                # Adicionar erros à linha se houver
-                if erro_linha:
-                    linha['erros'] = erro_linha
-                    erros.append({
-                        'ccb': ccb,
-                        'erros': erro_linha
-                    })
-                
-                comissoes[str(ccb)] = linha
-                
-            except Exception as e:
-                app.logger.error(f'Erro ao processar CCB {ccb}: {str(e)}')
-                erro_linha['geral'] = f'Erro geral: {str(e)}'
-                erros.append({
-                    'ccb': ccb,
-                    'erros': erro_linha
-                })
-                continue
-                
-    except Exception as e:
-        app.logger.error(f'Erro ao calcular comissões: {str(e)}')
-        flash('Ocorreu um erro ao calcular as comissões, mas alguns dados foram processados.', 'warning')
-    
-    # Armazenar erros na sessão para exibição posterior
-    session['erros_comissoes'] = erros
-    
-    return comissoes
+    return redirect(url_for('index'))
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 @login_required
-@auth.login_required
 def index():
     """Handle the main page and file upload."""
     if request.method == 'POST':
@@ -513,7 +105,6 @@ def index():
 
 @app.route('/dados')
 @login_required
-@auth.login_required
 def dados():
     """Display uploaded data."""
     dados = session.get('dados')
@@ -523,7 +114,6 @@ def dados():
 
 @app.route('/comissoes')
 @login_required
-@auth.login_required
 def comissoes():
     """Calculate and display commissions."""
     try:
@@ -578,7 +168,6 @@ def comissoes():
 
 @app.route('/tabela', methods=['GET'])
 @login_required
-@auth.login_required
 def tabela():
     """Render the table configuration page."""
     dados = session.get('dados')
@@ -604,7 +193,6 @@ def tabela():
 
 @app.route('/salvar_tabela', methods=['POST'])
 @login_required
-@auth.login_required
 def salvar_tabela():
     """Save table configuration for both percentage-based and fixed commission."""
     try:
@@ -680,7 +268,6 @@ def salvar_tabela():
 
 @app.route('/resultado')
 @login_required
-@auth.login_required
 def resultado():
     """Display contract details."""
     dados = session.get('dados')
@@ -733,7 +320,6 @@ def resultado():
 
 @app.route('/busca')
 @login_required
-@auth.login_required
 def busca():
     """Render the search page."""
     dados = session.get('dados')
