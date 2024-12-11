@@ -53,6 +53,9 @@ auth_client = AuthClient(
 )
 auth_client.init_app(app)
 
+# Use auth_client's login_required decorator
+login_required = auth_client.login_required
+
 # Configure session
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
@@ -104,21 +107,6 @@ def auth():
     session.permanent = True  # Make the session last longer
     
     return redirect(url_for('index'))
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        token = session.get('token')
-        if not token:
-            return redirect('https://af360bank.onrender.com/login')
-        
-        verification = auth_client.verify_token(token)
-        if not verification or not verification.get('valid'):
-            session.clear()
-            return redirect('https://af360bank.onrender.com/login')
-        
-        return f(*args, **kwargs)
-    return decorated_function
 
 @app.before_request
 def before_request():
