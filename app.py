@@ -1,4 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from datetime import datetime, timedelta
+from functools import wraps
+import os
 from auth_client import AuthClient
 import pandas as pd
 from decimal import Decimal, InvalidOperation
@@ -82,6 +86,30 @@ if not app.debug:
 # Configure debug logging
 if app.debug:
     app.logger.setLevel(logging.DEBUG)
+
+def verify_token(token):
+    try:
+        serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        data = serializer.loads(token, max_age=300)  # Token expires in 5 minutes
+        return data['destination'] == 'comissoes'
+    except:
+        return False
+
+@app.route('/auth')
+def auth():
+    token = request.args.get('token')
+    if not token or not verify_token(token):
+        return redirect('https://af360bank.onrender.com/login')
+    session['authenticated'] = True
+    return redirect(url_for('index'))
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('authenticated'):
+            return redirect('https://af360bank.onrender.com/login')
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.before_request
 def before_request():
@@ -452,6 +480,7 @@ def calcular_comissoes(dados: List[Dict]):
     return comissoes
 
 @app.route('/', methods=['GET', 'POST'])
+@login_required
 @auth.login_required
 def index():
     """Handle the main page and file upload."""
@@ -483,6 +512,7 @@ def index():
     return render_template('Index.html')
 
 @app.route('/dados')
+@login_required
 @auth.login_required
 def dados():
     """Display uploaded data."""
@@ -492,6 +522,7 @@ def dados():
     return render_template('dados.html', dados=dados)
 
 @app.route('/comissoes')
+@login_required
 @auth.login_required
 def comissoes():
     """Calculate and display commissions."""
@@ -546,6 +577,7 @@ def comissoes():
         return redirect(url_for('index'))
 
 @app.route('/tabela', methods=['GET'])
+@login_required
 @auth.login_required
 def tabela():
     """Render the table configuration page."""
@@ -571,6 +603,7 @@ def tabela():
     return render_template('tabela.html', tabelas=tabelas_data)
 
 @app.route('/salvar_tabela', methods=['POST'])
+@login_required
 @auth.login_required
 def salvar_tabela():
     """Save table configuration for both percentage-based and fixed commission."""
@@ -646,6 +679,7 @@ def salvar_tabela():
         return redirect(url_for('tabela'))
 
 @app.route('/resultado')
+@login_required
 @auth.login_required
 def resultado():
     """Display contract details."""
@@ -698,6 +732,7 @@ def resultado():
     return redirect(url_for('busca'))
 
 @app.route('/busca')
+@login_required
 @auth.login_required
 def busca():
     """Render the search page."""
