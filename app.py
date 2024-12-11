@@ -48,8 +48,8 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
 # Initialize auth client
 auth_client = AuthClient(
-    auth_server_url=os.getenv('AUTH_SERVER_URL'),
-    app_name=os.getenv('APP_NAME')
+    auth_server_url=os.getenv('AUTH_SERVER_URL', 'https://af360bank.onrender.com'),
+    app_name=os.getenv('APP_NAME', 'comissoes')
 )
 auth_client.init_app(app)
 
@@ -87,28 +87,35 @@ if not app.debug:
 if app.debug:
     app.logger.setLevel(logging.DEBUG)
 
-def verify_token(token):
-    try:
-        serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-        data = serializer.loads(token, max_age=300)  # Token expires in 5 minutes
-        return data['destination'] == 'comissoes'
-    except:
-        return False
-
 @app.route('/auth')
 def auth():
     token = request.args.get('token')
-    if not token or not verify_token(token):
+    if not token:
         return redirect('https://af360bank.onrender.com/login')
+    
+    verification = auth_client.verify_token(token)
+    if not verification or not verification.get('valid'):
+        return redirect('https://af360bank.onrender.com/login')
+    
+    # Set session variables
+    session['token'] = token
     session['authenticated'] = True
-    session.permanent = True
+    session.permanent = True  # Make the session last longer
+    
     return redirect(url_for('index'))
 
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('authenticated'):
+        token = session.get('token')
+        if not token:
             return redirect('https://af360bank.onrender.com/login')
+        
+        verification = auth_client.verify_token(token)
+        if not verification or not verification.get('valid'):
+            session.clear()
+            return redirect('https://af360bank.onrender.com/login')
+        
         return f(*args, **kwargs)
     return decorated_function
 
@@ -481,7 +488,7 @@ def calcular_comissoes(dados: List[Dict]):
     return comissoes
 
 @app.route('/', methods=['GET', 'POST'])
-@auth_client.login_required
+@login_required
 def index():
     """Handle the main page and file upload."""
     if request.method == 'POST':

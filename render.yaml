@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: sistema-de-comissoes
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+      pip install -e .
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.12
+      - key: AUTH_SERVER_URL
+        value: https://af360bank.onrender.com
+      - key: APP_NAME
+        value: comissoes
+      - key: SECRET_KEY
+        value: your-secret-key-here
