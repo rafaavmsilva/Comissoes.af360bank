@@ -47,11 +47,11 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
 # Initialize auth client
-auth = AuthClient(
+auth_client = AuthClient(
     auth_server_url=os.getenv('AUTH_SERVER_URL'),
     app_name=os.getenv('APP_NAME')
 )
-auth.init_app(app)
+auth_client.init_app(app)
 
 # Configure session
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -481,8 +481,7 @@ def calcular_comissoes(dados: List[Dict]):
     return comissoes
 
 @app.route('/', methods=['GET', 'POST'])
-@login_required
-@auth.login_required
+@auth_client.login_required
 def index():
     """Handle the main page and file upload."""
     if request.method == 'POST':
@@ -514,7 +513,6 @@ def index():
 
 @app.route('/dados')
 @login_required
-@auth.login_required
 def dados():
     """Display uploaded data."""
     dados = session.get('dados')
@@ -524,7 +522,6 @@ def dados():
 
 @app.route('/comissoes')
 @login_required
-@auth.login_required
 def comissoes():
     """Calculate and display commissions."""
     try:
@@ -579,7 +576,6 @@ def comissoes():
 
 @app.route('/tabela', methods=['GET'])
 @login_required
-@auth.login_required
 def tabela():
     """Render the table configuration page."""
     dados = session.get('dados')
@@ -605,7 +601,6 @@ def tabela():
 
 @app.route('/salvar_tabela', methods=['POST'])
 @login_required
-@auth.login_required
 def salvar_tabela():
     """Save table configuration for both percentage-based and fixed commission."""
     try:
@@ -681,7 +676,6 @@ def salvar_tabela():
 
 @app.route('/resultado')
 @login_required
-@auth.login_required
 def resultado():
     """Display contract details."""
     dados = session.get('dados')
@@ -734,7 +728,6 @@ def resultado():
 
 @app.route('/busca')
 @login_required
-@auth.login_required
 def busca():
     """Render the search page."""
     dados = session.get('dados')
