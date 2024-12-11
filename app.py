@@ -50,32 +50,32 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)  # Sessions last 24 hours
+app.config['SESSION_COOKIE_SECURE'] = True  # Only send cookies over HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to session cookie
 Session(app)
 
 # Initialize auth client
 auth_client = AuthClient(
     auth_server_url=os.getenv('AUTH_SERVER_URL', 'https://af360bank.onrender.com'),
-    app_name=os.getenv('APP_NAME', 'comissoes')
+    app_name=os.getenv('APP_NAME', 'sistema-comissoes')
 )
 auth_client.init_app(app)
 
-# Use auth_client's login_required decorator
-login_required = auth_client.login_required
-
-# Configure session and app
-app.config.update(
-    SESSION_COOKIE_SECURE=True,  # Only send cookies over HTTPS
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax',
-    MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max file size
-)
+# Login required decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('authenticated'):
+            return redirect('https://af360bank.onrender.com/login')
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Configure logging
-if not app.debug:
-    # Ensure the logs directory exists
-    if not os.path.exists('logs'):
-        os.makedirs('logs')
+if not os.path.exists('logs'):
+    os.makedirs('logs')
     
+# Ensure the logs directory exists
+if not app.debug:
     # Create a file handler
     file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
     file_handler.setFormatter(logging.Formatter(
@@ -117,6 +117,7 @@ def auth():
     
     # Set session variables
     session['token'] = token
+    session['authenticated'] = True
     session.permanent = True
     return redirect(url_for('index'))
 
