@@ -477,6 +477,49 @@ def calcular_comissoes(dados: List[Dict]):
     
     return comissoes
 
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload_xls', methods=['POST'])
+def upload_xls():
+    if 'xls_file' not in request.files:
+        flash('No file part', 'error')
+        return redirect(url_for('comissoes'))
+
+    file = request.files['xls_file']
+    if file.filename == '':
+        flash('No selected file', 'error')
+        return redirect(url_for('comissoes'))
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        
+        # Process the XLS file
+        xls_data = pd.read_excel(file_path)
+        xls_data = xls_data[['codigoproposta', 'comissao_parceiro']]
+        
+        # Load existing CSV data
+        csv_data = pd.read_csv(os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_csv.csv'))
+        
+        # Merge data based on CCB
+        merged_data = pd.merge(csv_data, xls_data, left_on='CCB', right_on='codigoproposta', how='left')
+        
+        # Save merged data to session or database
+        session['comissoes'] = merged_data.to_dict(orient='records')
+        
+        flash('XLS file uploaded and processed successfully', 'success')
+        return redirect(url_for('comissoes'))
+
+    flash('Invalid file format', 'error')
+    return redirect(url_for('comissoes'))
+
+@app.route('/comissoes')
+def comissoes():
+    comissoes_data = session.get('comissoes', [])
+    return render_template('comissoes.html', comissoes=comissoes_data)
+
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
