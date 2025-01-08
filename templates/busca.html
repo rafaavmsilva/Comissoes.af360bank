@@ -3,13 +3,82 @@
 {% block title %}Buscar CCB{% endblock %}
 
 {% block content %}
-    <div class="search-container">
-        <form class="search-form" action="/busca" method="get">
-            <input type="text" name="query" class="search-input" placeholder="Buscar CCB">
-            <button type="submit" class="search-button">
-                <span class="material-icons">search</span>
-                Buscar
-            </button>
-        </form>
+    <div class="container">
+        <h2 class="titulo">Buscar CCB</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="search-container">
+            <form action="{{ url_for('resultado') }}" method="get" class="search-form" onsubmit="return validateForm()">
+                <input type="text" name="ccb" id="ccb" class="search-input" placeholder="Digite o número da CCB" required>
+                <button type="submit" class="search-button">
+                    <span class="material-icons">search</span>
+                    Buscar
+                </button>
+            </form>
+            <div id="errorMessage" class="error-message">
+                <span class="material-icons" style="vertical-align: middle; margin-right: 5px;">error_outline</span>
+                CCB não encontrada no sistema.
+            </div>
+        </div>
     </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        function validateForm() {
+            const ccbInput = document.getElementById('ccb').value.trim();
+            const errorMessage = document.getElementById('errorMessage');
+            const form = document.querySelector('.search-form');
+            
+            // Make an AJAX request to check if the CCB exists
+            fetch(`/verificar_ccb/${ccbInput}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.exists) {
+                        errorMessage.classList.add('show');
+                    } else {
+                        errorMessage.classList.remove('show');
+                        window.location.href = `/resultado?ccb=${ccbInput}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    errorMessage.classList.add('show');
+                });
+
+            // Prevent default form submission
+            return false;
+        }
+
+        function clearAllData() {
+            if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
+                fetch('/limpar_dados', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Dados limpos com sucesso!');
+                        location.reload();
+                    } else {
+                        alert('Erro ao limpar dados: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Erro ao limpar dados. Por favor, tente novamente.');
+                });
+            }
+        }
+    </script>
 {% endblock %}
