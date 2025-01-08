@@ -177,6 +177,14 @@
                     <a href="{{ url_for('print_comissoes') }}" class="botao-detalhes" id="print-button" target="_blank">
                         <span class="material-icons">print</span> Imprimir Relatório
                     </a>
+                    <!-- New button and form for uploading XLS file -->
+                    <form action="{{ url_for('upload_xls') }}" method="post" enctype="multipart/form-data" style="display: inline;">
+                        <input type="file" name="xls_file" accept=".xls,.xlsx" style="display: none;" id="xlsFileInput">
+                        <button type="button" class="botao-detalhes" onclick="document.getElementById('xlsFileInput').click()">
+                            <span class="material-icons">upload</span>
+                            Upload XLS
+                        </button>
+                    </form>
                     <button onclick="clearAllData()" class="botao-detalhes">
                         <span class="material-icons">clear</span> Limpar Filtros
                     </button>
