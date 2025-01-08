@@ -477,10 +477,6 @@ def calcular_comissoes(dados: List[Dict]):
     
     return comissoes
 
-# Ensure the upload folder exists
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
-
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'xls', 'xlsx', 'csv'}
 
@@ -490,11 +486,13 @@ def allowed_file(filename):
 @app.route('/upload_xls', methods=['POST'])
 def upload_xls():
     if 'xls_file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
+        flash('No file part', 'error')
+        return redirect(url_for('comissoes'))
 
     file = request.files['xls_file']
     if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
+        flash('No selected file', 'error')
+        return redirect(url_for('comissoes'))
 
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
@@ -509,9 +507,8 @@ def upload_xls():
         
         xls_data = xls_data[['codigoproposta', 'comissao_parceiro']]
         
-        # Load existing session data
-        comissoes_data = session.get('comissoes', [])
-        csv_data = pd.DataFrame(comissoes_data)
+        # Load existing CSV data
+        csv_data = pd.read_csv(os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_csv.csv'))
         
         # Merge data based on CCB
         merged_data = pd.merge(csv_data, xls_data, left_on='CCB', right_on='codigoproposta', how='left')
@@ -522,12 +519,14 @@ def upload_xls():
         # Fill NaN values in 'Valor Confirmado' with empty strings
         merged_data['Valor Confirmado'].fillna('', inplace=True)
         
-        # Save merged data to session
+        # Save merged data to session or database
         session['comissoes'] = merged_data.to_dict(orient='records')
         
-        return jsonify({'success': 'File uploaded and processed successfully', 'data': session['comissoes']}), 200
+        flash('File uploaded and processed successfully', 'success')
+        return redirect(url_for('comissoes'))
 
-    return jsonify({'error': 'Invalid file format'}), 400
+    flash('Invalid file format', 'error')
+    return redirect(url_for('comissoes'))
 
 @app.route('/', methods=['GET', 'POST'])
 @login_required
