@@ -515,11 +515,6 @@ def upload_xls():
     flash('Invalid file format', 'error')
     return redirect(url_for('comissoes'))
 
-@app.route('/comissoes')
-def comissoes():
-    comissoes_data = session.get('comissoes', [])
-    return render_template('comissoes.html', comissoes=comissoes_data)
-
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
