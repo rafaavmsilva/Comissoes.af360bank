@@ -510,6 +510,12 @@ def upload_xls():
         # Merge data based on CCB
         merged_data = pd.merge(csv_data, xls_data, left_on='CCB', right_on='codigoproposta', how='left')
         
+        # Rename the column to 'Valor Confirmado'
+        merged_data.rename(columns={'comissao_parceiro': 'Valor Confirmado'}, inplace=True)
+        
+        # Fill NaN values in 'Valor Confirmado' with empty strings
+        merged_data['Valor Confirmado'].fillna('', inplace=True)
+        
         # Save merged data to session or database
         session['comissoes'] = merged_data.to_dict(orient='records')
         
