@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Website{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .filters {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        select, button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
+        .sort-button {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .sort-button .material-icons {
+            font-size: 18px;
+        }
+        th {
+            position: relative;
+        }
+        .sort-indicator {
+            font-size: 14px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <nav class="nav">
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a href="/" class="nav-link">
+                        <span class="material-icons nav-icon">upload_file</span>
+                        <span>Upload CSV</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/dados" class="nav-link active">
+                        <span class="material-icons nav-icon">table_view</span>
+                        <span>Contratos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/comissoes" class="nav-link">
+                        <span class="material-icons nav-icon">paid</span>
+                        <span>Comissões</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/busca" class="nav-link">
+                        <span class="material-icons nav-icon">search</span>
+                        <span>Buscar CCB</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/tabela" class="nav-link">
+                        <span class="material-icons nav-icon">calculate</span>
+                        <span>Tabela</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="logo-container">
+            <button onclick="clearAllData()" class="clear-data-button">
+                <span class="material-icons">delete_sweep</span>
+                Limpar Dados
+            </button>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+        </div>
+    </aside>
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
