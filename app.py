@@ -477,6 +477,10 @@ def calcular_comissoes(dados: List[Dict]):
     
     return comissoes
 
+# Ensure the upload folder exists
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+    
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'xls', 'xlsx', 'csv'}
 
