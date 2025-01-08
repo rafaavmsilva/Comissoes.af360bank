@@ -496,8 +496,12 @@ def upload_xls():
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
         
-        # Process the XLS file
-        xls_data = pd.read_excel(file_path)
+        # Process the file based on its extension
+        if file.filename.endswith('.csv'):
+            xls_data = pd.read_csv(file_path)
+        else:
+            xls_data = pd.read_excel(file_path)
+        
         xls_data = xls_data[['codigoproposta', 'comissao_parceiro']]
         
         # Load existing CSV data
@@ -509,7 +513,7 @@ def upload_xls():
         # Save merged data to session or database
         session['comissoes'] = merged_data.to_dict(orient='records')
         
-        flash('XLS file uploaded and processed successfully', 'success')
+        flash('File uploaded and processed successfully', 'success')
         return redirect(url_for('comissoes'))
 
     flash('Invalid file format', 'error')
