@@ -264,8 +264,8 @@
                 // Parse as float and ensure 2 decimal precision
                 const value = parseFloat(cleanText);
                 if (isNaN(value)) return 0;
-                // Round to 2 decimal places to match Python's decimal precision
-                return Math.round(value * 100) / 100;
+                // Return the parsed value directly
+                return value;
             } catch (error) {
                 console.error('Error parsing money value:', error, text);
                 return 0;
