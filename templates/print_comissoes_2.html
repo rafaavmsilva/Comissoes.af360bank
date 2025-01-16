@@ -204,6 +204,16 @@
     <div class="container">
         <h2 class="titulo">Relatório de Comissões</h2>
 
+        <div class="print-controls no-print">
+            <a href="{{ url_for('generate_pdf_2', template_name='comissoes') }}" class="btn btn-primary">
+                <i class="material-icons">download</i> Download PDF
+            </a>
+            <button onclick="window.print()" class="btn btn-secondary">
+                <i class="material-icons">print</i> Imprimir
+            </button>
+            <a href="{{ url_for('comissoes') }}" class="btn btn-secondary">Voltar</a>
+        </div>
+
         <div class="totals-bar">
             <div class="totals-grid">
                 <div class="total-item">
@@ -211,7 +221,11 @@
                     <div class="total-value" id="total-contratos">0</div>
                 </div>
                 <div class="total-item">
-                    <div class="total-label">Total de Repasse</div>
+                    <div class="total-label">Total de Comissões</div>
+                    <div class="total-value" id="total-comissoes">R$ 0,00</div>
+                </div>
+                <div class="total-item">
+                    <div class="total-label">Total Repassado</div>
                     <div class="total-value" id="total-repassado">R$ 0,00</div>
                 </div>
             </div>
@@ -226,6 +240,7 @@
                         <th>Cliente</th>
                         <th>Valor</th>
                         <th>Tabela</th>
+                        <th>Comissão</th>
                         <th>Repasse</th>
                     </tr>
                 </thead>
@@ -237,6 +252,7 @@
                         <td>{{ item.get('Cliente', 'N/A') }}</td>
                         <td>R$ {{ "%.2f"|format(item.get('Valor Bruto', 0)|float) }}</td>
                         <td>{{ item.get('Tabela', 'N/A') }}</td>
+                        <td>R$ {{ "%.2f"|format(item.get('comissao_recebida_valor', 0)|float) }}</td>
                         <td>R$ {{ "%.2f"|format(item.get('comissao_repassada_valor', 0)|float) }}</td>
                     </tr>
                     {% endfor %}
@@ -255,7 +271,7 @@
                 maximumFractionDigits: 2
             }).format(roundedValue);
         }
-    
+
         function parseMoneyValue(text) {
             if (!text) return 0;
             try {
@@ -268,51 +284,48 @@
                 return 0;
             }
         }
-    
+
         function updateTotals() {
             const rows = document.querySelectorAll('table tbody tr');
-            let totalOperations = rows.length;
-            let totalBruto = 0;
-            let totalLiquido = 0;
-    
+            let totalContratos = rows.length;
+            let totalComissoes = 0;
+            let totalRepassado = 0;
+
             rows.forEach((row, index) => {
                 try {
-                    // Get bruto value (column 4)
-                    const brutoText = row.cells[3].textContent;
-                    const brutoValue = parseMoneyValue(brutoText);
+                    const comissaoText = row.cells[5].textContent;
+                    const comissaoRecebida = parseMoneyValue(comissaoText);
                     
-                    // Get liquido value (column 5)
-                    const liquidoText = row.cells[4].textContent;
-                    const liquidoValue = parseMoneyValue(liquidoText);
+                    const repasseText = row.cells[6].textContent;
+                    const comissaoRepassada = parseMoneyValue(repasseText);
                     
-                    totalBruto = Math.round((totalBruto + brutoValue) * 100) / 100;
-                    totalLiquido = Math.round((totalLiquido + liquidoValue) * 100) / 100;
-    
+                    totalComissoes = Math.round((totalComissoes + comissaoRecebida) * 100) / 100;
+                    totalRepassado = Math.round((totalRepassado + comissaoRepassada) * 100) / 100;
+
                     console.debug(`Row ${index + 1} values:`, {
-                        originalBruto: brutoText,
-                        parsedBruto: brutoValue,
-                        originalLiquido: liquidoText,
-                        parsedLiquido: liquidoValue,
-                        runningTotalBruto: totalBruto,
-                        runningTotalLiquido: totalLiquido
+                        originalComissao: comissaoText,
+                        parsedComissao: comissaoRecebida,
+                        originalRepasse: repasseText,
+                        parsedRepasse: comissaoRepassada,
+                        runningTotalComissoes: totalComissoes,
+                        runningTotalRepassado: totalRepassado
                     });
                 } catch (error) {
                     console.error('Error processing row:', error, row);
                 }
             });
-    
-            // Update the totals display
-            document.getElementById('total-operacoes').textContent = totalOperations;
-            document.getElementById('total-bruto').textContent = formatCurrency(totalBruto);
-            document.getElementById('total-liquido').textContent = formatCurrency(totalLiquido);
+
+            document.getElementById('total-contratos').textContent = totalContratos;
+            document.getElementById('total-comissoes').textContent = formatCurrency(totalComissoes);
+            document.getElementById('total-repassado').textContent = formatCurrency(totalRepassado);
             
             console.log('Final totals:', {
-                operacoes: totalOperations,
-                bruto: formatCurrency(totalBruto),
-                liquido: formatCurrency(totalLiquido)
+                contratos: totalContratos,
+                comissoes: formatCurrency(totalComissoes),
+                repassado: formatCurrency(totalRepassado)
             });
         }
-    
+
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, updating totals...');
             try {
