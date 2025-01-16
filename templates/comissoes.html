@@ -177,6 +177,9 @@
                     <a href="{{ url_for('print_comissoes') }}" class="botao-detalhes" id="print-button" target="_blank">
                         <span class="material-icons">print</span> Imprimir Relatório
                     </a>
+                    <a href="{{ url_for('print_comissoes2') }}" class="botao-detalhes" id="print-button" target="_blank">
+                        <span class="material-icons">print</span> Imprimir Relatório sem Comissão
+                    </a>
                     <button onclick="clearAllData()" class="botao-detalhes">
                         <span class="material-icons">clear</span> Limpar Filtros
                     </button>
@@ -344,6 +347,11 @@
                 printButton.href = "{{ url_for('print_comissoes') }}";
             }
             
+            if (usuario) {
+                printButton.href = "{{ url_for('print_comissoes2') }}?usuario=" + encodeURIComponent(usuario);
+            } else {
+                printButton.href = "{{ url_for('print_comissoes2') }}";
+            }
             const tabelaValue = document.getElementById('tabela-filter').value.toLowerCase();
             filterTable(tabelaValue, usuario.toLowerCase());
         });
