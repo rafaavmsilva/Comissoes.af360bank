@@ -1056,7 +1056,7 @@ def print_comissoes_2():
                 documento = item.get('Documento', item.get('documento', item.get('CPF', '')))
                 item['Cliente'] = format_client_name(nome, documento)
         
-        return render_template('print_comissoes2.html', comissoes=comissoes_list)
+        return render_template('print_comissoes_2.html', comissoes=comissoes_list)
             
     except Exception as e:
         app.logger.error(f'Erro detalhado na rota /print_comissoes_2: {str(e)}', exc_info=True)
