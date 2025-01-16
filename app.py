@@ -1049,57 +1049,41 @@ def generate_dark_pdf_2(output_path, comissoes):
 
 @app.route('/print_comissoes_2')
 def print_comissoes_2():
+    """Render the print view for comissoes."""
     try:
-        selected_user = request.args.get('usuario')
-        comissoes = session.get('comissoes', [])
+        # Get selected user from query parameter
+        selected_user = request.args.get('usuario', '')
         
-        # Debug logging
-        app.logger.debug(f'Initial comissoes type: {type(comissoes)}')
-        app.logger.debug(f'Initial comissoes content: {comissoes}')
-        
-        # Ensure comissoes is a list of dictionaries
-        if isinstance(comissoes, str):
-            comissoes = json.loads(comissoes)
-        
-        app.logger.debug(f'Converted comissoes type: {type(comissoes)}')
-        app.logger.debug(f'Converted comissoes content: {comissoes}')
-        
-        if selected_user:
-            filtered_comissoes = []
-            for comissao in comissoes:
-                if isinstance(comissao, dict):
-                    user = comissao.get('Usuario') or comissao.get('Usuário', '')
-                    if user.lower() == selected_user.lower():
-                        filtered_comissoes.append(comissao)
-            comissoes = filtered_comissoes
-        
-        app.logger.debug(f'Filtered comissoes type: {type(comissoes)}')
-        app.logger.debug(f'Filtered comissoes content: {comissoes}')
-        
+        # Get existing comissoes from session
+        comissoes = session.get('comissoes')
         if not comissoes:
-            flash('Nenhuma comissão encontrada.', 'error')
+            flash('Nenhum dado de comissão encontrado.', 'error')
+            return redirect(url_for('comissoes'))
+        
+        # Convert dict_values to list
+        if isinstance(comissoes, dict):
+            comissoes_list = list(comissoes.values())
+        else:
+            comissoes_list = comissoes
+            
+        # Filter by user if specified
+        if selected_user and selected_user.strip():
+            filtered_list = []
+            for item in comissoes_list:
+                user = item.get('Usuário') or item.get('Usuario', '')
+                if user and user.lower() == selected_user.lower():
+                    filtered_list.append(item)
+            comissoes_list = filtered_list
+            
+        if not comissoes_list:
+            flash('Nenhuma comissão encontrada para o usuário selecionado.', 'error')
             return redirect(url_for('comissoes'))
             
-        # Create PDF directly
-        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as pdf_file:
-            generate_dark_pdf_2(pdf_file.name, comissoes)
-            
-            with open(pdf_file.name, 'rb') as f:
-                pdf_content = f.read()
-                
-            try:
-                os.unlink(pdf_file.name)
-            except Exception as e:
-                app.logger.error(f'Error deleting temp file: {str(e)}')
-                
-            response = make_response(pdf_content)
-            response.headers['Content-Type'] = 'application/pdf'
-            response.headers['Content-Disposition'] = 'attachment; filename=Comissoes_sem_comissao.pdf'
-            return response
+        return render_template('print_comissoes_2.html', comissoes=comissoes_list)
             
     except Exception as e:
-        app.logger.error(f'Error in print_comissoes_2: {str(e)}')
-        flash('Erro ao gerar PDF.', 'error')
+        app.logger.error(f'Erro detalhado na rota /print_comissoes_2: {str(e)}', exc_info=True)
+        flash(f'Ocorreu um erro ao gerar a visualização de impressão: {str(e)}', 'error')
         return redirect(url_for('comissoes'))
 
 @app.route('/print_comissoes')
