@@ -1129,7 +1129,6 @@ def print_comissoes_2():
             flash('Nenhuma comissão encontrada para o usuário selecionado.', 'error')
             return redirect(url_for('comissoes'))
 
-        # Store filtered data for PDF generation
         session['print_comissoes'] = comissoes
         return render_template('print_comissoes_2.html', comissoes=comissoes)
 
