@@ -953,6 +953,103 @@ def generate_pdf(template_name):
         flash('Erro ao gerar PDF. Por favor, tente novamente.', 'error')
         return redirect(url_for('usuario_ccbs'))
 
+
+def generate_dark_pdf_2(output_path, comissoes):
+    """Generate PDF for comissoes using ReportLab with maximum darkness settings"""
+    doc = SimpleDocTemplate(
+        output_path,
+        pagesize=A4,
+        rightMargin=30,
+        leftMargin=30,
+        topMargin=30,
+        bottomMargin=30
+    )
+    
+    story = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        alignment=TA_CENTER,
+        spaceAfter=30,
+        textColor=colors.black,
+        borderWidth=2,
+        borderColor=colors.black,
+        borderPadding=10,
+        leading=30
+    )
+    
+    text_style = ParagraphStyle(
+        'CustomText',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.black,
+        leading=15
+    )
+    
+    story.append(Paragraph("Relatório de Comissões", title_style))
+    story.append(Spacer(1, 20))
+    
+    table_data = [['Nome', 'CPF', 'Valor', 'Repasse', 'Data']]
+    
+    for comissao in comissoes:
+        row = [
+            str(comissao.get('nome', '')),
+            str(comissao.get('cpf', '')),
+            f"R$ {comissao.get('valor', 0):,.2f}",
+            f"R$ {comissao.get('repasse', 0):,.2f}",
+            comissao.get('data', '')
+        ]
+        table_data.append(row)
+    
+    table = Table(table_data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BOX', (0, 0), (-1, -1), 2.5, colors.black),
+        ('INNERGRID', (0, 0), (-1, -1), 1.5, colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.black),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    story.append(table)
+    story.append(Spacer(1, 30))
+    
+    total_valor = sum(comissao.get('valor', 0) for comissao in comissoes)
+    total_repasse = sum(comissao.get('repasse', 0) for comissao in comissoes)
+    
+    summary_style = ParagraphStyle(
+        'Summary',
+        parent=text_style,
+        fontSize=14,
+        borderWidth=2,
+        borderColor=colors.black,
+        borderPadding=10,
+        backColor=colors.white
+    )
+    
+    story.append(Paragraph(
+        f"""
+        <b>Resumo:</b><br/>
+        Total de comissões: {len(comissoes)}<br/>
+        Valor total: R$ {total_valor:,.2f}<br/>
+        Repasse total: R$ {total_repasse:,.2f}
+        """,
+        summary_style
+    ))
+    
+    doc.build(story)
+    
 @app.route('/print_view/<template_name>')
 def print_view(template_name):
     if template_name == 'usuario_ccbs':
