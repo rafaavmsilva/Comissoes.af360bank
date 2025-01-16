@@ -1103,6 +1103,10 @@ def print_comissoes_2():
         selected_user = request.args.get('usuario')
         comissoes = session.get('comissoes', [])
         
+        # Ensure comissoes is a list of dictionaries
+        if isinstance(comissoes, str):
+            comissoes = json.loads(comissoes)
+        
         if selected_user:
             filtered_comissoes = []
             for comissao in comissoes:
