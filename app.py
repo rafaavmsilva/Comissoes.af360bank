@@ -953,95 +953,6 @@ def generate_pdf(template_name):
         flash('Erro ao gerar PDF. Por favor, tente novamente.', 'error')
         return redirect(url_for('usuario_ccbs'))
 
-
-def generate_dark_pdf_2(output_path, comissoes):
-    """Generate PDF directly using ReportLab for comissoes without commission"""
-    doc = SimpleDocTemplate(
-        output_path,
-        pagesize=A4,
-        rightMargin=30,
-        leftMargin=30,
-        topMargin=30,
-        bottomMargin=30
-    )
-    
-    story = []
-    styles = getSampleStyleSheet()
-    
-    # Title style
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        alignment=TA_CENTER,
-        spaceAfter=30,
-        textColor=colors.black,
-        borderWidth=2,
-        borderColor=colors.black,
-        borderPadding=10,
-        leading=30
-    )
-    
-    # Add title
-    story.append(Paragraph("Relatório de Comissões", title_style))
-    story.append(Spacer(1, 20))
-    
-    # Table data
-    table_data = [['CCB', 'Cliente', 'Usuário', 'Valor Bruto', 'Valor Líquido']]
-    
-    for comissao in comissoes:
-        row = [
-            str(comissao.get('CCB', '')),
-            str(comissao.get('Cliente', '')),
-            str(comissao.get('Usuario', comissao.get('Usuário', ''))),
-            f"R$ {comissao.get('Valor Bruto', 0):,.2f}",
-            f"R$ {comissao.get('Valor Líquido', 0):,.2f}"
-        ]
-        table_data.append(row)
-    
-    # Table style
-    table = Table(table_data, repeatRows=1)
-    table.setStyle(TableStyle([
-        ('BOX', (0, 0), (-1, -1), 2.5, colors.black),
-        ('INNERGRID', (0, 0), (-1, -1), 1.5, colors.black),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.black),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 12),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
-    ]))
-    
-    story.append(table)
-    story.append(Spacer(1, 30))
-    
-    # Calculate totals
-    total_bruto = sum(comissao.get('Valor Bruto', 0) for comissao in comissoes)
-    total_liquido = sum(comissao.get('Valor Líquido', 0) for comissao in comissoes)
-    
-    # Add summary
-    summary_style = ParagraphStyle(
-        'Summary',
-        parent=styles['Normal'],
-        fontSize=14,
-        borderWidth=2,
-        borderColor=colors.black,
-        borderPadding=10,
-        backColor=colors.white
-    )
-    
-    story.append(Paragraph(
-        f"""
-        <b>Resumo:</b><br/>
-        Número total de operações: {len(comissoes)}<br/>
-        Valor total bruto: R$ {total_bruto:,.2f}<br/>
-        Valor total líquido: R$ {total_liquido:,.2f}
-        """,
-        summary_style
-    ))
-    
-    doc.build(story)
     
 @app.route('/print_view/<template_name>')
 def print_view(template_name):
@@ -1103,38 +1014,128 @@ def print_comissoes():
         flash(f'Ocorreu um erro ao gerar a visualização de impressão: {str(e)}', 'error')
         return redirect(url_for('comissoes'))
     
+def generate_dark_pdf_2(output_path, comissoes):
+    """Generate PDF for comissoes without commission details"""
+    doc = SimpleDocTemplate(
+        output_path,
+        pagesize=A4,
+        rightMargin=30,
+        leftMargin=30,
+        topMargin=30,
+        bottomMargin=30
+    )
+    
+    story = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        alignment=TA_CENTER,
+        spaceAfter=30,
+        textColor=colors.black
+    )
+    
+    story.append(Paragraph("Relatório de Comissões", title_style))
+    story.append(Spacer(1, 20))
+    
+    # Table data
+    table_data = [['CCB', 'Usuário', 'Cliente', 'Valor Bruto', 'Tabela', 'Repasse']]
+    
+    for comissao in comissoes:
+        row = [
+            str(comissao.get('CCB', '')),
+            str(comissao.get('Usuario', comissao.get('Usuário', ''))),
+            str(comissao.get('Cliente', '')),
+            f"R$ {comissao.get('Valor Bruto', 0):,.2f}",
+            str(comissao.get('Tabela', '')),
+            f"R$ {comissao.get('comissao_repassada_valor', 0):,.2f}"
+        ]
+        table_data.append(row)
+    
+    # Create table
+    table = Table(table_data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 2, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 1, colors.black),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTSIZE', (0,0), (-1,0), 12),
+        ('TOPPADDING', (0,0), (-1,0), 12),
+        ('BOTTOMPADDING', (0,0), (-1,0), 12),
+        ('BACKGROUND', (0,0), (-1,0), colors.grey)
+    ]))
+    
+    story.append(table)
+    story.append(Spacer(1, 30))
+    
+    # Calculate totals
+    total_bruto = sum(comissao.get('Valor Bruto', 0) for comissao in comissoes)
+    total_repasse = sum(comissao.get('comissao_repassada_valor', 0) for comissao in comissoes)
+    
+    # Add summary
+    summary_style = ParagraphStyle(
+        'Summary',
+        parent=styles['Normal'],
+        fontSize=14,
+        borderWidth=2,
+        borderColor=colors.black,
+        borderPadding=10,
+        backColor=colors.white
+    )
+    
+    story.append(Paragraph(
+        f"""
+        <b>Resumo:</b><br/>
+        Total de operações: {len(comissoes)}<br/>
+        Valor total bruto: R$ {total_bruto:,.2f}<br/>
+        Total de repasse: R$ {total_repasse:,.2f}
+        """,
+        summary_style
+    ))
+    
+    doc.build(story)
+
 @app.route('/print_comissoes_2')
 def print_comissoes_2():
     try:
         selected_user = request.args.get('usuario')
         comissoes = session.get('comissoes', [])
         
-        if not isinstance(comissoes, list):
-            comissoes = list(comissoes.values()) if isinstance(comissoes, dict) else []
-            
-        if not comissoes:
-            flash('Nenhum dado de comissão encontrado.', 'error')
-            return redirect(url_for('comissoes'))
-            
         if selected_user:
             filtered_comissoes = []
             for comissao in comissoes:
                 if isinstance(comissao, dict):
                     user = comissao.get('Usuario') or comissao.get('Usuário', '')
-                    if user and user.lower() == selected_user.lower():
+                    if user.lower() == selected_user.lower():
                         filtered_comissoes.append(comissao)
             comissoes = filtered_comissoes
             
         if not comissoes:
-            flash('Nenhuma comissão encontrada para o usuário selecionado.', 'error')
+            flash('Nenhuma comissão encontrada.', 'error')
             return redirect(url_for('comissoes'))
-
-        session['print_comissoes'] = comissoes
-        return render_template('print_comissoes_2.html', comissoes=comissoes)
-
+            
+        # Create PDF directly
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as pdf_file:
+            generate_dark_pdf_2(pdf_file.name, comissoes)
+            
+            with open(pdf_file.name, 'rb') as f:
+                pdf_content = f.read()
+                
+            try:
+                os.unlink(pdf_file.name)
+            except Exception as e:
+                app.logger.error(f'Error deleting temp file: {str(e)}')
+                
+            response = make_response(pdf_content)
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = 'attachment; filename=Comissoes_sem_comissao.pdf'
+            return response
+            
     except Exception as e:
-        app.logger.error(f'Erro na rota /print_comissoes_2: {str(e)}')
-        flash('Erro ao gerar relatório. Por favor, tente novamente.', 'error')
+        app.logger.error(f'Error in print_comissoes_2: {str(e)}')
+        flash('Erro ao gerar PDF.', 'error')
         return redirect(url_for('comissoes'))
 
 @app.route('/generate_pdf_2/<template_name>')
