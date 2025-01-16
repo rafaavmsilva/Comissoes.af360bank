@@ -1109,6 +1109,9 @@ def print_comissoes_2():
         selected_user = request.args.get('usuario')
         comissoes = session.get('comissoes', [])
         
+        if not isinstance(comissoes, list):
+            comissoes = list(comissoes.values()) if isinstance(comissoes, dict) else []
+            
         if not comissoes:
             flash('Nenhum dado de comissão encontrado.', 'error')
             return redirect(url_for('comissoes'))
@@ -1116,16 +1119,17 @@ def print_comissoes_2():
         if selected_user:
             filtered_comissoes = []
             for comissao in comissoes:
-                user = comissao.get('Usuario') or comissao.get('Usuário', '')
-                if user.lower() == selected_user.lower():
-                    filtered_comissoes.append(comissao)
+                if isinstance(comissao, dict):
+                    user = comissao.get('Usuario') or comissao.get('Usuário', '')
+                    if user and user.lower() == selected_user.lower():
+                        filtered_comissoes.append(comissao)
             comissoes = filtered_comissoes
             
         if not comissoes:
             flash('Nenhuma comissão encontrada para o usuário selecionado.', 'error')
             return redirect(url_for('comissoes'))
 
-        # For print preview
+        # Store filtered data for PDF generation
         session['print_comissoes'] = comissoes
         return render_template('print_comissoes_2.html', comissoes=comissoes)
 
