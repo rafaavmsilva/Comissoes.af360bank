@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, make_response
-from flask_sqlalchemy import SQLAlchemy
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from datetime import datetime, timedelta
 from functools import wraps
@@ -45,17 +44,6 @@ from PIL import Image, ImageEnhance
 import cv2
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///comissoes.db')
-db = SQLAlchemy(app)
-
-class Comissao(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(100), nullable=False)
-    cpf = db.Column(db.String(20), nullable=False)
-    valor = db.Column(db.Float, nullable=False)
-    repasse = db.Column(db.Float, nullable=True)
-    data = db.Column(db.Date, nullable=True)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
 # Configure session
