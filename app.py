@@ -963,56 +963,6 @@ def print_view(template_name):
         ccbs = session.get('ccbs', [])
         return render_template('print_usuario_ccbs.html', usuario=usuario, ccbs=ccbs)
     return redirect(url_for('index'))
-
-@app.route('/print_comissoes')
-def print_comissoes():
-    """Render the print view for comissoes."""
-    try:
-        # Get selected user from query parameter
-        selected_user = request.args.get('usuario', '')
-        
-        # Get existing comissoes from session
-        comissoes = session.get('comissoes')
-        if not comissoes:
-            flash('Nenhum dado de comissão encontrado.', 'error')
-            return redirect(url_for('comissoes'))
-        
-        # Convert dict_values to list
-        if isinstance(comissoes, dict):
-            comissoes_list = list(comissoes.values())
-        else:
-            comissoes_list = comissoes
-            
-        # Filter by user if specified
-        if selected_user and selected_user.strip():
-            filtered_list = []
-            for item in comissoes_list:
-                user = item.get('Usuário') or item.get('Usuario', '')
-                if user and user.lower() == selected_user.lower():
-                    filtered_list.append(item)
-            comissoes_list = filtered_list
-            
-        if not comissoes_list:
-            flash('Nenhuma comissão encontrada para o usuário selecionado.', 'error')
-            return redirect(url_for('comissoes'))
-            
-        # Log the data being passed to template
-        app.logger.info(f"Passing {len(comissoes_list)} comissões to template")
-        app.logger.info(f"Sample comissão: {comissoes_list[0] if comissoes_list else 'No data'}")
-        
-        # Ensure all required fields are present
-        for item in comissoes_list:
-            if not item.get('Cliente'):
-                nome = item.get('Nome', item.get('nome', ''))
-                documento = item.get('Documento', item.get('documento', item.get('CPF', '')))
-                item['Cliente'] = format_client_name(nome, documento)
-        
-        return render_template('print_comissoes.html', comissoes=comissoes_list)
-            
-    except Exception as e:
-        app.logger.error(f'Erro detalhado na rota /print_comissoes: {str(e)}', exc_info=True)
-        flash(f'Ocorreu um erro ao gerar a visualização de impressão: {str(e)}', 'error')
-        return redirect(url_for('comissoes'))
     
 def generate_dark_pdf_2(output_path, comissoes):
     """Generate PDF for comissoes without commission details"""
@@ -1150,6 +1100,45 @@ def print_comissoes_2():
     except Exception as e:
         app.logger.error(f'Error in print_comissoes_2: {str(e)}')
         flash('Erro ao gerar PDF.', 'error')
+        return redirect(url_for('comissoes'))
+
+@app.route('/print_comissoes')
+def print_comissoes():
+    """Render the print view for comissoes."""
+    try:
+        # Get selected user from query parameter
+        selected_user = request.args.get('usuario', '')
+        
+        # Get existing comissoes from session
+        comissoes = session.get('comissoes')
+        if not comissoes:
+            flash('Nenhum dado de comissão encontrado.', 'error')
+            return redirect(url_for('comissoes'))
+        
+        # Convert dict_values to list
+        if isinstance(comissoes, dict):
+            comissoes_list = list(comissoes.values())
+        else:
+            comissoes_list = comissoes
+            
+        # Filter by user if specified
+        if selected_user and selected_user.strip():
+            filtered_list = []
+            for item in comissoes_list:
+                user = item.get('Usuário') or item.get('Usuario', '')
+                if user and user.lower() == selected_user.lower():
+                    filtered_list.append(item)
+            comissoes_list = filtered_list
+            
+        if not comissoes_list:
+            flash('Nenhuma comissão encontrada para o usuário selecionado.', 'error')
+            return redirect(url_for('comissoes'))
+            
+        return render_template('print_comissoes.html', comissoes=comissoes_list)
+            
+    except Exception as e:
+        app.logger.error(f'Erro detalhado na rota /print_comissoes: {str(e)}', exc_info=True)
+        flash(f'Ocorreu um erro ao gerar a visualização de impressão: {str(e)}', 'error')
         return redirect(url_for('comissoes'))
 
 @app.route('/generate_pdf_2/<template_name>')
