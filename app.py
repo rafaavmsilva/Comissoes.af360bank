@@ -1103,9 +1103,16 @@ def print_comissoes_2():
         selected_user = request.args.get('usuario')
         comissoes = session.get('comissoes', [])
         
+        # Debug logging
+        app.logger.debug(f'Initial comissoes type: {type(comissoes)}')
+        app.logger.debug(f'Initial comissoes content: {comissoes}')
+        
         # Ensure comissoes is a list of dictionaries
         if isinstance(comissoes, str):
             comissoes = json.loads(comissoes)
+        
+        app.logger.debug(f'Converted comissoes type: {type(comissoes)}')
+        app.logger.debug(f'Converted comissoes content: {comissoes}')
         
         if selected_user:
             filtered_comissoes = []
@@ -1115,7 +1122,10 @@ def print_comissoes_2():
                     if user.lower() == selected_user.lower():
                         filtered_comissoes.append(comissao)
             comissoes = filtered_comissoes
-            
+        
+        app.logger.debug(f'Filtered comissoes type: {type(comissoes)}')
+        app.logger.debug(f'Filtered comissoes content: {comissoes}')
+        
         if not comissoes:
             flash('Nenhuma comissão encontrada.', 'error')
             return redirect(url_for('comissoes'))
