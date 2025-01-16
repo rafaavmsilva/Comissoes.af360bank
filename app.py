@@ -1152,11 +1152,9 @@ def print_comissoes():
         return redirect(url_for('comissoes'))
     
 @app.route('/print_comissoes_2')
-def print_comissoes():
-    """Render the print view for comissoes."""
+def print_comissoes_2():
     try:
-        # Get selected user from query parameter
-        selected_user = request.args.get('usuario', '')
+        selected_user = request.args.get('usuario')
         
         # Get existing comissoes from session
         comissoes = session.get('comissoes')
@@ -1178,27 +1176,31 @@ def print_comissoes():
                 if user and user.lower() == selected_user.lower():
                     filtered_list.append(item)
             comissoes_list = filtered_list
-            
+        
         if not comissoes_list:
             flash('Nenhuma comissão encontrada para o usuário selecionado.', 'error')
             return redirect(url_for('comissoes'))
+        
+        # Generate PDF
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as pdf_file:
+            generate_dark_pdf_2(pdf_file.name, comissoes_list)
             
-        # Log the data being passed to template
-        app.logger.info(f"Passing {len(comissoes_list)} comissões to template")
-        app.logger.info(f"Sample comissão: {comissoes_list[0] if comissoes_list else 'No data'}")
-        
-        # Ensure all required fields are present
-        for item in comissoes_list:
-            if not item.get('Cliente'):
-                nome = item.get('Nome', item.get('nome', ''))
-                documento = item.get('Documento', item.get('documento', item.get('CPF', '')))
-                item['Cliente'] = format_client_name(nome, documento)
-        
-        return render_template('print_comissoes_2.html', comissoes=comissoes_list)
+            with open(pdf_file.name, 'rb') as f:
+                pdf_content = f.read()
+            
+            try:
+                os.unlink(pdf_file.name)
+            except Exception as e:
+                app.logger.error(f'Error deleting temporary file {pdf_file.name}: {str(e)}')
+            
+            response = make_response(pdf_content)
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = 'attachment; filename=Comissoes_sem_comissao.pdf'
+            return response
             
     except Exception as e:
-        app.logger.error(f'Erro detalhado na rota /print_comissoes: {str(e)}', exc_info=True)
-        flash(f'Ocorreu um erro ao gerar a visualização de impressão: {str(e)}', 'error')
+        app.logger.error(f'Erro detalhado na rota /print_comissoes_2: {str(e)}', exc_info=True)
+        flash(f'Ocorreu um erro ao gerar o PDF: {str(e)}', 'error')
         return redirect(url_for('comissoes'))
 
 if __name__ == '__main__':
