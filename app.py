@@ -954,8 +954,8 @@ def generate_pdf(template_name):
         return redirect(url_for('usuario_ccbs'))
 
 
-def generate_dark_pdf_2(output_path, usuario, ccbs):
-    """Generate PDF directly using ReportLab with maximum darkness settings"""
+def generate_dark_pdf_2(output_path, comissoes):
+    """Generate PDF directly using ReportLab for comissoes without commission"""
     doc = SimpleDocTemplate(
         output_path,
         pagesize=A4,
@@ -965,13 +965,10 @@ def generate_dark_pdf_2(output_path, usuario, ccbs):
         bottomMargin=30
     )
     
-    # Create story for elements
     story = []
-    
-    # Create custom styles
     styles = getSampleStyleSheet()
     
-    # Extra dark title style
+    # Title style
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
@@ -985,92 +982,48 @@ def generate_dark_pdf_2(output_path, usuario, ccbs):
         leading=30
     )
     
-    # Extra dark header style
-    header_style = ParagraphStyle(
-        'CustomHeader',
-        parent=styles['Heading2'],
-        fontSize=16,
-        textColor=colors.black,
-        leading=20,
-        borderWidth=1,
-        borderColor=colors.black,
-        borderPadding=5
-    )
-    
-    # Extra dark normal text style
-    text_style = ParagraphStyle(
-        'CustomText',
-        parent=styles['Normal'],
-        fontSize=12,
-        textColor=colors.black,
-        leading=15
-    )
-    
     # Add title
-    story.append(Paragraph(f"Relatório de CCBs - {usuario}", title_style))
+    story.append(Paragraph("Relatório de Comissões", title_style))
     story.append(Spacer(1, 20))
     
-    # Prepare table data
-    table_data = [['Número', 'Valor', 'Data de Vencimento', 'Taxa', 'Valor Total']]
+    # Table data
+    table_data = [['CCB', 'Cliente', 'Usuário', 'Valor Bruto', 'Valor Líquido']]
     
-    # Add CCB data
-    for ccb in ccbs:
+    for comissao in comissoes:
         row = [
-            str(ccb.get('numero', '')),
-            f"R$ {ccb.get('valor', 0):,.2f}",
-            ccb.get('data_vencimento', ''),
-            f"{ccb.get('taxa', 0):.2f}%",
-            f"R$ {ccb.get('valor_total', 0):,.2f}"
+            str(comissao.get('CCB', '')),
+            str(comissao.get('Cliente', '')),
+            str(comissao.get('Usuario', comissao.get('Usuário', ''))),
+            f"R$ {comissao.get('Valor Bruto', 0):,.2f}",
+            f"R$ {comissao.get('Valor Líquido', 0):,.2f}"
         ]
         table_data.append(row)
     
-    # Create table with thick borders and dark text
+    # Table style
     table = Table(table_data, repeatRows=1)
     table.setStyle(TableStyle([
-        # Extra thick outer border
         ('BOX', (0, 0), (-1, -1), 2.5, colors.black),
-        
-        # Extra thick inner borders
         ('INNERGRID', (0, 0), (-1, -1), 1.5, colors.black),
-        
-        # Dark header background
         ('BACKGROUND', (0, 0), (-1, 0), colors.black),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        
-        # Extra dark text for data cells
         ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        
-        # Bold all text
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 12),
-        
-        # Cell padding
-        ('TOPPADDING', (0, 0), (-1, -1), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        
-        # Alternating row colors
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
-        
-        # Extra alignment
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
     ]))
     
     story.append(table)
-    
-    # Add summary section
     story.append(Spacer(1, 30))
     
     # Calculate totals
-    total_valor = sum(ccb.get('valor', 0) for ccb in ccbs)
-    total_valor_total = sum(ccb.get('valor_total', 0) for ccb in ccbs)
+    total_bruto = sum(comissao.get('Valor Bruto', 0) for comissao in comissoes)
+    total_liquido = sum(comissao.get('Valor Líquido', 0) for comissao in comissoes)
     
-    # Add summary with thick borders
+    # Add summary
     summary_style = ParagraphStyle(
         'Summary',
-        parent=text_style,
+        parent=styles['Normal'],
         fontSize=14,
         borderWidth=2,
         borderColor=colors.black,
@@ -1081,14 +1034,13 @@ def generate_dark_pdf_2(output_path, usuario, ccbs):
     story.append(Paragraph(
         f"""
         <b>Resumo:</b><br/>
-        Número total de CCBs: {len(ccbs)}<br/>
-        Valor total inicial: R$ {total_valor:,.2f}<br/>
-        Valor total com juros: R$ {total_valor_total:,.2f}
+        Número total de operações: {len(comissoes)}<br/>
+        Valor total bruto: R$ {total_bruto:,.2f}<br/>
+        Valor total líquido: R$ {total_liquido:,.2f}
         """,
         summary_style
     ))
     
-    # Generate PDF
     doc.build(story)
     
 @app.route('/print_view/<template_name>')
