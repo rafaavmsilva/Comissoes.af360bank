@@ -108,8 +108,7 @@
         th:nth-child(3), td:nth-child(3) { width: 25%; } /* Cliente */
         th:nth-child(4), td:nth-child(4) { width: 15%; } /* Valor */
         th:nth-child(5), td:nth-child(5) { width: 15%; } /* Tabela */
-        th:nth-child(6), td:nth-child(6) { width: 10%; } /* Comissao */
-        th:nth-child(7), td:nth-child(7) { width: 10%; } /* Repasse */
+        th:nth-child(6), td:nth-child(6) { width: 20%; } /* Repasse */
 
         @media print {
             @page {
@@ -204,25 +203,11 @@
     <div class="container">
         <h2 class="titulo">Relatório de Comissões</h2>
 
-        <div class="print-controls no-print">
-            <a href="{{ url_for('generate_pdf_2', template_name='comissoes') }}" class="btn btn-primary">
-                <i class="material-icons">download</i> Download PDF
-            </a>
-            <button onclick="window.print()" class="btn btn-secondary">
-                <i class="material-icons">print</i> Imprimir
-            </button>
-            <a href="{{ url_for('comissoes') }}" class="btn btn-secondary">Voltar</a>
-        </div>
-
         <div class="totals-bar">
             <div class="totals-grid">
                 <div class="total-item">
                     <div class="total-label">Total de Contratos</div>
                     <div class="total-value" id="total-contratos">0</div>
-                </div>
-                <div class="total-item">
-                    <div class="total-label">Total de Comissões</div>
-                    <div class="total-value" id="total-comissoes">R$ 0,00</div>
                 </div>
                 <div class="total-item">
                     <div class="total-label">Total Repassado</div>
@@ -240,7 +225,6 @@
                         <th>Cliente</th>
                         <th>Valor</th>
                         <th>Tabela</th>
-                        <th>Comissão</th>
                         <th>Repasse</th>
                     </tr>
                 </thead>
@@ -252,7 +236,6 @@
                         <td>{{ item.get('Cliente', 'N/A') }}</td>
                         <td>R$ {{ "%.2f"|format(item.get('Valor Bruto', 0)|float) }}</td>
                         <td>{{ item.get('Tabela', 'N/A') }}</td>
-                        <td>R$ {{ "%.2f"|format(item.get('comissao_recebida_valor', 0)|float) }}</td>
                         <td>R$ {{ "%.2f"|format(item.get('comissao_repassada_valor', 0)|float) }}</td>
                     </tr>
                     {% endfor %}
@@ -263,6 +246,7 @@
 
     <script>
         function formatCurrency(value) {
+            // Round to 2 decimal places before formatting
             const roundedValue = Math.round(value * 100) / 100;
             return new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
@@ -275,9 +259,12 @@
         function parseMoneyValue(text) {
             if (!text) return 0;
             try {
+                // Remove R$, spaces, dots, and convert comma to dot
                 const cleanText = text.replace(/[R$\s.]/g, '').replace(',', '.');
+                // Parse as float and ensure 2 decimal precision
                 const value = parseFloat(cleanText);
                 if (isNaN(value)) return 0;
+                // Round to 2 decimal places to match Python's decimal precision
                 return Math.round(value * 100) / 100;
             } catch (error) {
                 console.error('Error parsing money value:', error, text);
@@ -288,26 +275,20 @@
         function updateTotals() {
             const rows = document.querySelectorAll('table tbody tr');
             let totalContratos = rows.length;
-            let totalComissoes = 0;
             let totalRepassado = 0;
 
             rows.forEach((row, index) => {
                 try {
-                    const comissaoText = row.cells[5].textContent;
-                    const comissaoRecebida = parseMoneyValue(comissaoText);
-                    
-                    const repasseText = row.cells[6].textContent;
+                    // Get repasse value (column 6)
+                    const repasseText = row.cells[5].textContent;
                     const comissaoRepassada = parseMoneyValue(repasseText);
                     
-                    totalComissoes = Math.round((totalComissoes + comissaoRecebida) * 100) / 100;
+                    // Use integer math to avoid floating point issues
                     totalRepassado = Math.round((totalRepassado + comissaoRepassada) * 100) / 100;
 
                     console.debug(`Row ${index + 1} values:`, {
-                        originalComissao: comissaoText,
-                        parsedComissao: comissaoRecebida,
                         originalRepasse: repasseText,
                         parsedRepasse: comissaoRepassada,
-                        runningTotalComissoes: totalComissoes,
                         runningTotalRepassado: totalRepassado
                     });
                 } catch (error) {
@@ -315,21 +296,22 @@
                 }
             });
 
+            // Update the totals display
             document.getElementById('total-contratos').textContent = totalContratos;
-            document.getElementById('total-comissoes').textContent = formatCurrency(totalComissoes);
             document.getElementById('total-repassado').textContent = formatCurrency(totalRepassado);
             
             console.log('Final totals:', {
                 contratos: totalContratos,
-                comissoes: formatCurrency(totalComissoes),
                 repassado: formatCurrency(totalRepassado)
             });
         }
 
+        // Wait for the DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, updating totals...');
             try {
                 updateTotals();
+                // Wait a moment for the totals to update before printing
                 setTimeout(() => {
                     console.log('Triggering print...');
                     window.print();
