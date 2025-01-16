@@ -340,11 +340,10 @@
         document.getElementById('usuario-filter').addEventListener('change', function() {
             const usuario = this.value;
             const printButton = document.getElementById('print-button');
-            
             if (usuario) {
-                printButton.href = "{{ url_for('print_comissoes') }}?usuario=" + encodeURIComponent(usuario);
+                printButton2.href = "{{ url_for('print_comissoes_2') }}?usuario=" + encodeURIComponent(usuario);
             } else {
-                printButton.href = "{{ url_for('print_comissoes') }}";
+                printButton2.href = "{{ url_for('print_comissoes_2') }}";
             }
             
             const printButton2 = document.getElementById('print-button2');
