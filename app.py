@@ -954,8 +954,8 @@ def generate_pdf(template_name):
         return redirect(url_for('usuario_ccbs'))
 
 
-def generate_dark_pdf_2(output_path, comissoes):
-    """Generate PDF for comissoes using ReportLab with maximum darkness settings"""
+def generate_dark_pdf_2(output_path, usuario, ccbs):
+    """Generate PDF directly using ReportLab with maximum darkness settings"""
     doc = SimpleDocTemplate(
         output_path,
         pagesize=A4,
@@ -965,9 +965,13 @@ def generate_dark_pdf_2(output_path, comissoes):
         bottomMargin=30
     )
     
+    # Create story for elements
     story = []
+    
+    # Create custom styles
     styles = getSampleStyleSheet()
     
+    # Extra dark title style
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
@@ -981,6 +985,19 @@ def generate_dark_pdf_2(output_path, comissoes):
         leading=30
     )
     
+    # Extra dark header style
+    header_style = ParagraphStyle(
+        'CustomHeader',
+        parent=styles['Heading2'],
+        fontSize=16,
+        textColor=colors.black,
+        leading=20,
+        borderWidth=1,
+        borderColor=colors.black,
+        borderPadding=5
+    )
+    
+    # Extra dark normal text style
     text_style = ParagraphStyle(
         'CustomText',
         parent=styles['Normal'],
@@ -989,45 +1006,68 @@ def generate_dark_pdf_2(output_path, comissoes):
         leading=15
     )
     
-    story.append(Paragraph("Relatório de Comissões", title_style))
+    # Add title
+    story.append(Paragraph(f"Relatório de CCBs - {usuario}", title_style))
     story.append(Spacer(1, 20))
     
-    table_data = [['Nome', 'CPF', 'Valor', 'Repasse', 'Data']]
+    # Prepare table data
+    table_data = [['Número', 'Valor', 'Data de Vencimento', 'Taxa', 'Valor Total']]
     
-    for comissao in comissoes:
+    # Add CCB data
+    for ccb in ccbs:
         row = [
-            str(comissao.get('nome', '')),
-            str(comissao.get('cpf', '')),
-            f"R$ {comissao.get('valor', 0):,.2f}",
-            f"R$ {comissao.get('repasse', 0):,.2f}",
-            comissao.get('data', '')
+            str(ccb.get('numero', '')),
+            f"R$ {ccb.get('valor', 0):,.2f}",
+            ccb.get('data_vencimento', ''),
+            f"{ccb.get('taxa', 0):.2f}%",
+            f"R$ {ccb.get('valor_total', 0):,.2f}"
         ]
         table_data.append(row)
     
+    # Create table with thick borders and dark text
     table = Table(table_data, repeatRows=1)
     table.setStyle(TableStyle([
+        # Extra thick outer border
         ('BOX', (0, 0), (-1, -1), 2.5, colors.black),
+        
+        # Extra thick inner borders
         ('INNERGRID', (0, 0), (-1, -1), 1.5, colors.black),
+        
+        # Dark header background
         ('BACKGROUND', (0, 0), (-1, 0), colors.black),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        
+        # Extra dark text for data cells
         ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        
+        # Bold all text
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 12),
+        
+        # Cell padding
         ('TOPPADDING', (0, 0), (-1, -1), 12),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
         ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        
+        # Alternating row colors
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+        
+        # Extra alignment
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     
     story.append(table)
+    
+    # Add summary section
     story.append(Spacer(1, 30))
     
-    total_valor = sum(comissao.get('valor', 0) for comissao in comissoes)
-    total_repasse = sum(comissao.get('repasse', 0) for comissao in comissoes)
+    # Calculate totals
+    total_valor = sum(ccb.get('valor', 0) for ccb in ccbs)
+    total_valor_total = sum(ccb.get('valor_total', 0) for ccb in ccbs)
     
+    # Add summary with thick borders
     summary_style = ParagraphStyle(
         'Summary',
         parent=text_style,
@@ -1041,13 +1081,14 @@ def generate_dark_pdf_2(output_path, comissoes):
     story.append(Paragraph(
         f"""
         <b>Resumo:</b><br/>
-        Total de comissões: {len(comissoes)}<br/>
-        Valor total: R$ {total_valor:,.2f}<br/>
-        Repasse total: R$ {total_repasse:,.2f}
+        Número total de CCBs: {len(ccbs)}<br/>
+        Valor total inicial: R$ {total_valor:,.2f}<br/>
+        Valor total com juros: R$ {total_valor_total:,.2f}
         """,
         summary_style
     ))
     
+    # Generate PDF
     doc.build(story)
     
 @app.route('/print_view/<template_name>')
@@ -1111,7 +1152,7 @@ def print_comissoes():
         return redirect(url_for('comissoes'))
     
 @app.route('/print_comissoes_2')
-def print_comissoes_2():
+def print_comissoes():
     """Render the print view for comissoes."""
     try:
         # Get selected user from query parameter
@@ -1156,37 +1197,10 @@ def print_comissoes_2():
         return render_template('print_comissoes_2.html', comissoes=comissoes_list)
             
     except Exception as e:
-        app.logger.error(f'Erro detalhado na rota /print_comissoes_2: {str(e)}', exc_info=True)
+        app.logger.error(f'Erro detalhado na rota /print_comissoes: {str(e)}', exc_info=True)
         flash(f'Ocorreu um erro ao gerar a visualização de impressão: {str(e)}', 'error')
         return redirect(url_for('comissoes'))
 
-@app.route('/print_view_comissoes_2')
-def print_view_comissoes_2():
-    try:
-        selected_user = request.args.get('usuario')
-        comissoes = []
-        results = db.session.query(Comissao).all()
-        
-        if selected_user:
-            results = [r for r in results if r.nome == selected_user]
-            
-        for result in results:
-            comissoes.append({
-                'nome': result.nome,
-                'cpf': result.cpf,
-                'valor': float(result.valor),
-                'repasse': float(result.repasse) if result.repasse else 0,
-                'data': result.data.strftime('%d/%m/%Y') if result.data else ''
-            })
-            
-        session['comissoes'] = comissoes
-        return render_template('print_comissoes_2.html', comissoes=comissoes)
-        
-    except Exception as e:
-        app.logger.error(f"Error in print_view_comissoes_2: {str(e)}")
-        flash('Erro ao exibir relatório. Por favor, tente novamente.', 'error')
-        return redirect(url_for('comissoes'))
-    
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port=port, debug=True)
