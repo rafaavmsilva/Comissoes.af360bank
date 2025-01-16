@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, make_response
+from flask_sqlalchemy import SQLAlchemy
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from datetime import datetime, timedelta
 from functools import wraps
@@ -44,6 +45,17 @@ from PIL import Image, ImageEnhance
 import cv2
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///comissoes.db')
+db = SQLAlchemy(app)
+
+class Comissao(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    cpf = db.Column(db.String(20), nullable=False)
+    valor = db.Column(db.Float, nullable=False)
+    repasse = db.Column(db.Float, nullable=True)
+    data = db.Column(db.Date, nullable=True)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
 # Configure session
@@ -1160,6 +1172,33 @@ def print_comissoes_2():
         flash(f'Ocorreu um erro ao gerar a visualização de impressão: {str(e)}', 'error')
         return redirect(url_for('comissoes'))
 
+@app.route('/print_view_comissoes_2')
+def print_view_comissoes_2():
+    try:
+        selected_user = request.args.get('usuario')
+        comissoes = []
+        results = db.session.query(Comissao).all()
+        
+        if selected_user:
+            results = [r for r in results if r.nome == selected_user]
+            
+        for result in results:
+            comissoes.append({
+                'nome': result.nome,
+                'cpf': result.cpf,
+                'valor': float(result.valor),
+                'repasse': float(result.repasse) if result.repasse else 0,
+                'data': result.data.strftime('%d/%m/%Y') if result.data else ''
+            })
+            
+        session['comissoes'] = comissoes
+        return render_template('print_comissoes_2.html', comissoes=comissoes)
+        
+    except Exception as e:
+        app.logger.error(f"Error in print_view_comissoes_2: {str(e)}")
+        flash('Erro ao exibir relatório. Por favor, tente novamente.', 'error')
+        return redirect(url_for('comissoes'))
+    
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port=port, debug=True)
