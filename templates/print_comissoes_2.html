@@ -247,7 +247,6 @@
 
     <script>
         function formatCurrency(value) {
-            // Round to 2 decimal places before formatting
             const roundedValue = Math.round(value * 100) / 100;
             return new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
@@ -256,74 +255,68 @@
                 maximumFractionDigits: 2
             }).format(roundedValue);
         }
-
+    
         function parseMoneyValue(text) {
             if (!text) return 0;
             try {
-                // Remove R$, spaces, dots, and convert comma to dot
                 const cleanText = text.replace(/[R$\s.]/g, '').replace(',', '.');
-                // Parse as float and ensure 2 decimal precision
                 const value = parseFloat(cleanText);
                 if (isNaN(value)) return 0;
-                // Round to 2 decimal places to match Python's decimal precision
-                return Math.round(value) / 100;
+                return Math.round(value * 100) / 100;
             } catch (error) {
                 console.error('Error parsing money value:', error, text);
                 return 0;
             }
         }
-
+    
         function updateTotals() {
             const rows = document.querySelectorAll('table tbody tr');
-            let totalContratos = rows.length;
-            let totalComissoes = 0;
-            let totalRepassado = 0;
-
+            let totalOperations = rows.length;
+            let totalBruto = 0;
+            let totalLiquido = 0;
+    
             rows.forEach((row, index) => {
                 try {
-                    // Get comissão value (column 6)
-                    const comissaoText = row.cells[5].textContent;
-                    const comissaoRecebida = parseMoneyValue(comissaoText);
+                    // Get bruto value (column 4)
+                    const brutoText = row.cells[3].textContent;
+                    const brutoValue = parseMoneyValue(brutoText);
                     
-                    // Get repasse value (column 7)
-                    const repasseText = row.cells[6].textContent;
-                    const comissaoRepassada = parseMoneyValue(repasseText);
+                    // Get liquido value (column 5)
+                    const liquidoText = row.cells[4].textContent;
+                    const liquidoValue = parseMoneyValue(liquidoText);
                     
-                    // Use integer math to avoid floating point issues
-                    totalComissoes = Math.round((totalComissoes + comissaoRecebida) * 100) / 100;
-                    totalRepassado = Math.round((totalRepassado + comissaoRepassada) * 100) / 100;
-
+                    totalBruto = Math.round((totalBruto + brutoValue) * 100) / 100;
+                    totalLiquido = Math.round((totalLiquido + liquidoValue) * 100) / 100;
+    
                     console.debug(`Row ${index + 1} values:`, {
-                        originalComissao: comissaoText,
-                        parsedComissao: comissaoRecebida,
-                        originalRepasse: repasseText,
-                        parsedRepasse: comissaoRepassada,
-                        runningTotalComissoes: totalComissoes,
-                        runningTotalRepassado: totalRepassado
+                        originalBruto: brutoText,
+                        parsedBruto: brutoValue,
+                        originalLiquido: liquidoText,
+                        parsedLiquido: liquidoValue,
+                        runningTotalBruto: totalBruto,
+                        runningTotalLiquido: totalLiquido
                     });
                 } catch (error) {
                     console.error('Error processing row:', error, row);
                 }
             });
-
+    
             // Update the totals display
-            document.getElementById('total-contratos').textContent = totalContratos;
-            document.getElementById('total-comissoes').textContent = formatCurrency(totalComissoes);
-            document.getElementById('total-repassado').textContent = formatCurrency(totalRepassado);
+            document.getElementById('total-operacoes').textContent = totalOperations;
+            document.getElementById('total-bruto').textContent = formatCurrency(totalBruto);
+            document.getElementById('total-liquido').textContent = formatCurrency(totalLiquido);
             
             console.log('Final totals:', {
-                contratos: totalContratos,
-                comissoes: formatCurrency(totalComissoes),
-                repassado: formatCurrency(totalRepassado)
+                operacoes: totalOperations,
+                bruto: formatCurrency(totalBruto),
+                liquido: formatCurrency(totalLiquido)
             });
         }
-
-        // Wait for the DOM to be fully loaded
+    
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, updating totals...');
             try {
                 updateTotals();
-                // Wait a moment for the totals to update before printing
                 setTimeout(() => {
                     console.log('Triggering print...');
                     window.print();

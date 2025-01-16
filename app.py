@@ -1107,52 +1107,63 @@ def print_comissoes():
 def print_comissoes_2():
     try:
         selected_user = request.args.get('usuario')
+        comissoes = session.get('comissoes', [])
         
-        # Get existing comissoes from session
-        comissoes = session.get('comissoes')
         if not comissoes:
             flash('Nenhum dado de comissão encontrado.', 'error')
             return redirect(url_for('comissoes'))
-        
-        # Convert dict_values to list
-        if isinstance(comissoes, dict):
-            comissoes_list = list(comissoes.values())
-        else:
-            comissoes_list = comissoes
             
-        # Filter by user if specified
-        if selected_user and selected_user.strip():
-            filtered_list = []
-            for item in comissoes_list:
-                user = item.get('Usuário') or item.get('Usuario', '')
-                if user and user.lower() == selected_user.lower():
-                    filtered_list.append(item)
-            comissoes_list = filtered_list
-        
-        if not comissoes_list:
+        if selected_user:
+            filtered_comissoes = []
+            for comissao in comissoes:
+                user = comissao.get('Usuario') or comissao.get('Usuário', '')
+                if user.lower() == selected_user.lower():
+                    filtered_comissoes.append(comissao)
+            comissoes = filtered_comissoes
+            
+        if not comissoes:
             flash('Nenhuma comissão encontrada para o usuário selecionado.', 'error')
             return redirect(url_for('comissoes'))
-        
-        # Generate PDF
-        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as pdf_file:
-            generate_dark_pdf_2(pdf_file.name, comissoes_list)
-            
-            with open(pdf_file.name, 'rb') as f:
-                pdf_content = f.read()
-            
-            try:
-                os.unlink(pdf_file.name)
-            except Exception as e:
-                app.logger.error(f'Error deleting temporary file {pdf_file.name}: {str(e)}')
-            
-            response = make_response(pdf_content)
-            response.headers['Content-Type'] = 'application/pdf'
-            response.headers['Content-Disposition'] = 'attachment; filename=Comissoes_sem_comissao.pdf'
-            return response
-            
+
+        # For print preview
+        session['print_comissoes'] = comissoes
+        return render_template('print_comissoes_2.html', comissoes=comissoes)
+
     except Exception as e:
-        app.logger.error(f'Erro detalhado na rota /print_comissoes_2: {str(e)}', exc_info=True)
-        flash(f'Ocorreu um erro ao gerar o PDF: {str(e)}', 'error')
+        app.logger.error(f'Erro na rota /print_comissoes_2: {str(e)}')
+        flash('Erro ao gerar relatório. Por favor, tente novamente.', 'error')
+        return redirect(url_for('comissoes'))
+
+@app.route('/generate_pdf_2/<template_name>')
+def generate_pdf_2(template_name):
+    try:
+        if template_name == 'comissoes':
+            comissoes = session.get('print_comissoes', [])
+            
+            # Create temporary file for PDF
+            with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as pdf_file:
+                # Generate PDF
+                generate_dark_pdf_2(pdf_file.name, comissoes)
+                
+                # Read PDF
+                with open(pdf_file.name, 'rb') as f:
+                    pdf_content = f.read()
+                
+                # Cleanup
+                try:
+                    os.unlink(pdf_file.name)
+                except Exception as e:
+                    app.logger.error(f'Error deleting temporary file {pdf_file.name}: {str(e)}')
+                
+                # Return PDF
+                response = make_response(pdf_content)
+                response.headers['Content-Type'] = 'application/pdf'
+                response.headers['Content-Disposition'] = 'attachment; filename=Comissoes_sem_comissao.pdf'
+                return response
+
+    except Exception as e:
+        app.logger.error(f'Error generating PDF: {str(e)}')
+        flash('Erro ao gerar PDF. Por favor, tente novamente.', 'error')
         return redirect(url_for('comissoes'))
 
 if __name__ == '__main__':
