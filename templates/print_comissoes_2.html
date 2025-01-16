@@ -31,6 +31,14 @@
             margin: 0 auto;
             padding: 0 15px;
             box-sizing: border-box;
+            position: relative;
+        }
+
+        .logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 100px;
         }
 
         h2.titulo {
@@ -201,6 +209,7 @@
 </head>
 <body>
     <div class="container">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
         <h2 class="titulo">Relatório de Comissões</h2>
 
         <div class="totals-bar">
@@ -281,7 +290,7 @@
                 try {
                     // Get repasse value (column 6)
                     const repasseText = row.cells[5].textContent;
-                    const comissaoRepassada = parseMoneyValue(repasseText) / 100;
+                    const comissaoRepassada = parseMoneyValue(repasseText);
                     
                     // Use integer math to avoid floating point issues
                     totalRepassado = Math.round((totalRepassado + comissaoRepassada) * 100) / 100;
