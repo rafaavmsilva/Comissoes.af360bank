@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, make_response
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from datetime import datetime, timedelta
 from functools import wraps
@@ -1013,8 +1013,8 @@ def print_comissoes():
         flash(f'Ocorreu um erro ao gerar a visualização de impressão: {str(e)}', 'error')
         return redirect(url_for('comissoes'))
     
-@app.route('/print_comissoe2')
-def print_comissoes():
+@app.route('/print_comissoes_2')
+def print_comissoes_2():
     """Render the print view for comissoes."""
     try:
         # Get selected user from query parameter
@@ -1059,7 +1059,7 @@ def print_comissoes():
         return render_template('print_comissoes2.html', comissoes=comissoes_list)
             
     except Exception as e:
-        app.logger.error(f'Erro detalhado na rota /print_comissoes: {str(e)}', exc_info=True)
+        app.logger.error(f'Erro detalhado na rota /print_comissoes_2: {str(e)}', exc_info=True)
         flash(f'Ocorreu um erro ao gerar a visualização de impressão: {str(e)}', 'error')
         return redirect(url_for('comissoes'))
 

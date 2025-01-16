@@ -348,9 +348,9 @@
             }
             
             if (usuario) {
-                printButton.href = "{{ url_for('print_comissoes2') }}?usuario=" + encodeURIComponent(usuario);
+                printButton.href = "{{ url_for('print_comissoes_2') }}?usuario=" + encodeURIComponent(usuario);
             } else {
-                printButton.href = "{{ url_for('print_comissoes2') }}";
+                printButton.href = "{{ url_for('print_comissoes_2') }}";
             }
             const tabelaValue = document.getElementById('tabela-filter').value.toLowerCase();
             filterTable(tabelaValue, usuario.toLowerCase());
