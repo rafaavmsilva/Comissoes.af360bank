@@ -35,15 +35,6 @@
             padding-top: 170px; /* Add padding to prevent overlap with the logo */
         }
 
-        .logo {
-            position: fixed;
-            top: 0;
-            left: 0;
-            max-width: 150px;
-            max-height: 150px;
-            z-index: 10;
-        }
-
         h2.titulo {
             color: var(--primary-color);
             text-align: center;
@@ -215,7 +206,6 @@
 </head>
 <body>
     <div class="container">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="logo">
         <h2 class="titulo">Relatório de Comissões</h2>
 
         <div class="totals-bar">
