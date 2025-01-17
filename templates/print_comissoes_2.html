@@ -233,45 +233,47 @@
 
         <div class="table-container">
             {% set row_count = 0 %}
-            {% for item in comissoes %}
-                {% if row_count % 9 == 0 %}
-                    {% if row_count > 0 %}
-                        </tbody></table>
-                        <div style="height: 170px;"></div>
-                        <table><thead>
-                            <tr>
-                                <th>CCB</th>
-                                <th>Usuário</th>
-                                <th>Cliente</th>
-                                <th>Valor</th>
-                                <th>Tabela</th>
-                                <th>Repasse</th>
-                            </tr>
-                        </thead><tbody>
-                    {% else %}
-                        <table><thead>
-                            <tr>
-                                <th>CCB</th>
-                                <th>Usuário</th>
-                                <th>Cliente</th>
-                                <th>Valor</th>
-                                <th>Tabela</th>
-                                <th>Repasse</th>
-                            </tr>
-                        </thead><tbody>
-                    {% endif %}
-                {% endif %}
-                <tr>
-                    <td>{{ item.get('CCB', 'N/A') }}</td>
-                    <td>{{ item.get('Usuário', item.get('Usuario', 'N/A')) }}</td>
-                    <td>{{ item.get('Cliente', 'N/A') }}</td>
-                    <td>R$ {{ "%.2f"|format(item.get('Valor Bruto', 0)|float) }}</td>
-                    <td>{{ item.get('Tabela', 'N/A') }}</td>
-                    <td>R$ {{ "%.2f"|format(item.get('comissao_repassada_valor', 0)|float) }}</td>
-                </tr>
-                {% set row_count = row_count + 1 %}
-            {% endfor %}
-            </tbody></table>
+            <table>
+                <thead>
+                    <tr>
+                        <th>CCB</th>
+                        <th>Usuário</th>
+                        <th>Cliente</th>
+                        <th>Valor</th>
+                        <th>Tabela</th>
+                        <th>Repasse</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in comissoes %}
+                        {% if row_count > 0 and row_count % 9 == 0 %}
+                            </tbody></table>
+                            <div style="height: 170px;"></div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>CCB</th>
+                                        <th>Usuário</th>
+                                        <th>Cliente</th>
+                                        <th>Valor</th>
+                                        <th>Tabela</th>
+                                        <th>Repasse</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        {% endif %}
+                        <tr>
+                            <td>{{ item.get('CCB', 'N/A') }}</td>
+                            <td>{{ item.get('Usuário', item.get('Usuario', 'N/A')) }}</td>
+                            <td>{{ item.get('Cliente', 'N/A') }}</td>
+                            <td>R$ {{ "%.2f"|format(item.get('Valor Bruto', 0)|float) }}</td>
+                            <td>{{ item.get('Tabela', 'N/A') }}</td>
+                            <td>R$ {{ "%.2f"|format(item.get('comissao_repassada_valor', 0)|float) }}</td>
+                        </tr>
+                        {% set row_count = row_count + 1 %}
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
