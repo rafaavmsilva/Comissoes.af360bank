@@ -1125,6 +1125,94 @@ def print_comissoes():
         flash(f'Ocorreu um erro ao gerar a visualização de impressão: {str(e)}', 'error')
         return redirect(url_for('comissoes'))
 
+def generate_dark_pdf_2(output_path, comissoes):
+    """Generate PDF for comissoes without commission details"""
+    doc = SimpleDocTemplate(
+        output_path,
+        pagesize=A4,
+        rightMargin=30,
+        leftMargin=30,
+        topMargin=170,  # Add top margin to prevent overlap with the logo
+        bottomMargin=30
+    )
+    
+    # Create a frame with the same top margin for subsequent pages
+    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
+    template = PageTemplate(id='test', frames=frame)
+    doc.addPageTemplates([template])
+    
+    story = []
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        alignment=TA_CENTER,
+        spaceAfter=30,
+        textColor=colors.black
+    )
+    
+    story.append(Paragraph("Relatório de Comissões", title_style))
+    story.append(Spacer(1, 20))
+    
+    # Table data
+    table_data = [['CCB', 'Usuário', 'Cliente', 'Valor Bruto', 'Tabela', 'Repasse']]
+    
+    for comissao in comissoes:
+        row = [
+            str(comissao.get('CCB', '')),
+            str(comissao.get('Usuario', comissao.get('Usuário', ''))),
+            str(comissao.get('Cliente', '')),
+            f"R$ {comissao.get('Valor Bruto', 0):,.2f}",
+            str(comissao.get('Tabela', '')),
+            f"R$ {comissao.get('comissao_repassada_valor', 0):,.2f}"
+        ]
+        table_data.append(row)
+    
+    # Create table
+    table = Table(table_data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 2, colors.black),
+        ('INNERGRID', (0,0), (-1,-1), 1, colors.black),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTSIZE', (0,0), (-1,0), 12),
+        ('TOPPADDING', (0,0), (-1,0), 12),
+        ('BOTTOMPADDING', (0,0), (-1,0), 12),
+        ('BACKGROUND', (0,0), (-1,0), colors.grey)
+    ]))
+    
+    story.append(table)
+    story.append(Spacer(1, 30))
+    
+    # Calculate totals
+    total_bruto = sum(comissao.get('Valor Bruto', 0) for comissao in comissoes)
+    total_repasse = sum(comissao.get('comissao_repassada_valor', 0) for comissao in comissoes)
+    
+    # Add summary
+    summary_style = ParagraphStyle(
+        'Summary',
+        parent=styles['Normal'],
+        fontSize=14,
+        borderWidth=2,
+        borderColor=colors.black,
+        borderPadding=10,
+        backColor=colors.white
+    )
+    
+    story.append(Paragraph(
+        f"""
+        <b>Resumo:</b><br/>
+        Total de operações: {len(comissoes)}<br/>
+        Valor total bruto: R$ {total_bruto:,.2f}<br/>
+        Total de repasse: R$ {total_repasse:,.2f}
+        """,
+        summary_style
+    ))
+    
+    doc.build(story)
+
 @app.route('/generate_pdf_2/<template_name>')
 def generate_pdf_2(template_name):
     try:
