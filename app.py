@@ -34,7 +34,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.units import inch
 from xhtml2pdf import pisa
-from io import BytesIOs
+from io import BytesIO
 import imgkit
 from PIL import Image, ImageEnhance
 import tempfile
