@@ -963,94 +963,6 @@ def print_view(template_name):
         ccbs = session.get('ccbs', [])
         return render_template('print_usuario_ccbs.html', usuario=usuario, ccbs=ccbs)
     return redirect(url_for('index'))
-    
-def generate_dark_pdf_2(output_path, comissoes):
-    """Generate PDF for comissoes without commission details"""
-    doc = SimpleDocTemplate(
-        output_path,
-        pagesize=A4,
-        rightMargin=30,
-        leftMargin=30,
-        topMargin=170,  # Add top margin to prevent overlap with the logo
-        bottomMargin=30
-    )
-    
-    # Create a frame with the same top margin for subsequent pages
-    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height - 170, id='normal')
-    template = PageTemplate(id='test', frames=frame)
-    doc.addPageTemplates([template])
-    
-    story = []
-    styles = getSampleStyleSheet()
-    
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        alignment=TA_CENTER,
-        spaceAfter=30,
-        textColor=colors.black
-    )
-    
-    story.append(Paragraph("Relatório de Comissões", title_style))
-    story.append(Spacer(1, 20))
-    
-    # Table data
-    table_data = [['CCB', 'Usuário', 'Cliente', 'Valor Bruto', 'Tabela', 'Repasse']]
-    
-    for comissao in comissoes:
-        row = [
-            str(comissao.get('CCB', '')),
-            str(comissao.get('Usuario', comissao.get('Usuário', ''))),
-            str(comissao.get('Cliente', '')),
-            f"R$ {comissao.get('Valor Bruto', 0):,.2f}",
-            str(comissao.get('Tabela', '')),
-            f"R$ {comissao.get('comissao_repassada_valor', 0):,.2f}"
-        ]
-        table_data.append(row)
-    
-    # Create table
-    table = Table(table_data, repeatRows=1)
-    table.setStyle(TableStyle([
-        ('BOX', (0,0), (-1,-1), 2, colors.black),
-        ('INNERGRID', (0,0), (-1,-1), 1, colors.black),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('FONTSIZE', (0,0), (-1,0), 12),
-        ('TOPPADDING', (0,0), (-1,0), 12),
-        ('BOTTOMPADDING', (0,0), (-1,0), 12),
-        ('BACKGROUND', (0,0), (-1,0), colors.grey)
-    ]))
-    
-    story.append(table)
-    story.append(Spacer(1, 30))
-    
-    # Calculate totals
-    total_bruto = sum(comissao.get('Valor Bruto', 0) for comissao in comissoes)
-    total_repasse = sum(comissao.get('comissao_repassada_valor', 0) for comissao in comissoes)
-    
-    # Add summary
-    summary_style = ParagraphStyle(
-        'Summary',
-        parent=styles['Normal'],
-        fontSize=14,
-        borderWidth=2,
-        borderColor=colors.black,
-        borderPadding=10,
-        backColor=colors.white
-    )
-    
-    story.append(Paragraph(
-        f"""
-        <b>Resumo:</b><br/>
-        Total de operações: {len(comissoes)}<br/>
-        Valor total bruto: R$ {total_bruto:,.2f}<br/>
-        Total de repasse: R$ {total_repasse:,.2f}
-        """,
-        summary_style
-    ))
-    
-    doc.build(story)
 
 @app.route('/print_comissoes_2')
 def print_comissoes_2():
@@ -1141,10 +1053,26 @@ def generate_dark_pdf_2(output_path, comissoes):
         bottomMargin=30
     )
     
-    # Create a frame with the same top margin for subsequent pages
-    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
-    template = PageTemplate(id='test', frames=frame)
-    doc.addPageTemplates([template])
+    # Create a frame for the first page with the logo
+    frame_first_page = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height - 170, id='first_page')
+    
+    # Create a frame for subsequent pages without the logo
+    frame_other_pages = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='other_pages')
+    
+    # Define the first page template with the logo
+    def first_page(canvas, doc):
+        canvas.saveState()
+        logo_path = r'C:\Users\marke\OneDrive\Área de Trabalho\comissoes af360bank online\Comissoes.af360bank\static\images\logo.png'
+        if os.path.exists(logo_path):
+            logo = ImageReader(logo_path)
+            canvas.drawImage(logo, doc.leftMargin, A4[1] - 150, width=150, height=150)
+        canvas.restoreState()
+    
+    # Define the page templates
+    template_first_page = PageTemplate(id='first_page', frames=frame_first_page, onPage=first_page)
+    template_other_pages = PageTemplate(id='other_pages', frames=frame_other_pages)
+    
+    doc.addPageTemplates([template_first_page, template_other_pages])
     
     story = []
     styles = getSampleStyleSheet()
