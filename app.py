@@ -971,7 +971,7 @@ def generate_dark_pdf_2(output_path, comissoes):
         pagesize=A4,
         rightMargin=30,
         leftMargin=30,
-        topMargin=170,  # Add top margin to prevent overlap with the logo
+        topMargin=30,  # Add top margin to prevent overlap with the logo
         bottomMargin=30
     )
     
