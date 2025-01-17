@@ -971,9 +971,14 @@ def generate_dark_pdf_2(output_path, comissoes):
         pagesize=A4,
         rightMargin=30,
         leftMargin=30,
-        topMargin=0,  # Add top margin to prevent overlap with the logo
-        bottomMargin=0
+        topMargin=170,  # Add top margin to prevent overlap with the logo
+        bottomMargin=30
     )
+    
+    # Create a frame with the same top margin for subsequent pages
+    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height - 170, id='normal')
+    template = PageTemplate(id='test', frames=frame)
+    doc.addPageTemplates([template])
     
     story = []
     styles = getSampleStyleSheet()
