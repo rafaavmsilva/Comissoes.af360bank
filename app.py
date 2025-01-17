@@ -1092,7 +1092,7 @@ def generate_dark_pdf_2(output_path, comissoes):
     # Table data
     table_data = [['CCB', 'Usuário', 'Cliente', 'Valor Bruto', 'Tabela', 'Repasse']]
     
-    for comissao in comissoes:
+    for index, comissao in enumerate(comissoes):
         row = [
             str(comissao.get('CCB', '')),
             str(comissao.get('Usuario', comissao.get('Usuário', ''))),
@@ -1102,21 +1102,18 @@ def generate_dark_pdf_2(output_path, comissoes):
             f"R$ {comissao.get('comissao_repassada_valor', 0):,.2f}"
         ]
         table_data.append(row)
+        
+        # Add a spacer after every 9 rows
+        if (index + 1) % 9 == 0:
+            table_data.append([''] * len(table_data[0]))  # Add an empty row
+            story.append(Table(table_data, repeatRows=1))
+            story.append(Spacer(1, 170))  # Add spacer with the same height as the logo
+            table_data = [['CCB', 'Usuário', 'Cliente', 'Valor Bruto', 'Tabela', 'Repasse']]  # Reset table data
     
-    # Create table
-    table = Table(table_data, repeatRows=1)
-    table.setStyle(TableStyle([
-        ('BOX', (0,0), (-1,-1), 2, colors.black),
-        ('INNERGRID', (0,0), (-1,-1), 1, colors.black),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('FONTSIZE', (0,0), (-1,0), 12),
-        ('TOPPADDING', (0,0), (-1,0), 12),
-        ('BOTTOMPADDING', (0,0), (-1,0), 12),
-        ('BACKGROUND', (0,0), (-1,0), colors.grey)
-    ]))
+    # Add remaining table data
+    if len(table_data) > 1:
+        story.append(Table(table_data, repeatRows=1))
     
-    story.append(table)
     story.append(Spacer(1, 30))
     
     # Calculate totals
