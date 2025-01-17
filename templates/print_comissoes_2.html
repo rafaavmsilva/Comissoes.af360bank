@@ -32,7 +32,7 @@
             padding: 0 15px;
             box-sizing: border-box;
             position: relative;
-            padding-top: 100px; /* Add padding to prevent overlap with the logo */
+            padding-top: 170px; /* Add padding to prevent overlap with the logo */
         }
 
         .logo {
@@ -47,7 +47,7 @@
         h2.titulo {
             color: var(--primary-color);
             text-align: center;
-            margin-bottom: 0px;
+            margin-bottom: 30px;
             font-size: 2em;
             font-weight: bold;
         }
@@ -141,7 +141,7 @@
                 max-width: none;
                 padding: 0;
                 margin: 0;
-                padding-top: 30px; /* Add padding to prevent overlap with the logo */
+                padding-top: 170px; /* Add padding to prevent overlap with the logo */
             }
 
             .table-container {
@@ -232,30 +232,46 @@
         </div>
 
         <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>CCB</th>
-                        <th>Usuário</th>
-                        <th>Cliente</th>
-                        <th>Valor</th>
-                        <th>Tabela</th>
-                        <th>Repasse</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in comissoes %}
-                    <tr>
-                        <td>{{ item.get('CCB', 'N/A') }}</td>
-                        <td>{{ item.get('Usuário', item.get('Usuario', 'N/A')) }}</td>
-                        <td>{{ item.get('Cliente', 'N/A') }}</td>
-                        <td>R$ {{ "%.2f"|format(item.get('Valor Bruto', 0)|float) }}</td>
-                        <td>{{ item.get('Tabela', 'N/A') }}</td>
-                        <td>R$ {{ "%.2f"|format(item.get('comissao_repassada_valor', 0)|float) }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            {% set row_count = 0 %}
+            {% for item in comissoes %}
+                {% if row_count % 9 == 0 %}
+                    {% if row_count > 0 %}
+                        </tbody></table>
+                        <div style="height: 170px;"></div>
+                        <table><thead>
+                            <tr>
+                                <th>CCB</th>
+                                <th>Usuário</th>
+                                <th>Cliente</th>
+                                <th>Valor</th>
+                                <th>Tabela</th>
+                                <th>Repasse</th>
+                            </tr>
+                        </thead><tbody>
+                    {% else %}
+                        <table><thead>
+                            <tr>
+                                <th>CCB</th>
+                                <th>Usuário</th>
+                                <th>Cliente</th>
+                                <th>Valor</th>
+                                <th>Tabela</th>
+                                <th>Repasse</th>
+                            </tr>
+                        </thead><tbody>
+                    {% endif %}
+                {% endif %}
+                <tr>
+                    <td>{{ item.get('CCB', 'N/A') }}</td>
+                    <td>{{ item.get('Usuário', item.get('Usuario', 'N/A')) }}</td>
+                    <td>{{ item.get('Cliente', 'N/A') }}</td>
+                    <td>R$ {{ "%.2f"|format(item.get('Valor Bruto', 0)|float) }}</td>
+                    <td>{{ item.get('Tabela', 'N/A') }}</td>
+                    <td>R$ {{ "%.2f"|format(item.get('comissao_repassada_valor', 0)|float) }}</td>
+                </tr>
+                {% set row_count = row_count + 1 %}
+            {% endfor %}
+            </tbody></table>
         </div>
     </div>
 
