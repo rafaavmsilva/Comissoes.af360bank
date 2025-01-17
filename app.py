@@ -1105,7 +1105,6 @@ def generate_dark_pdf_2(output_path, comissoes):
         
         # Add a spacer after every 9 rows
         if (index + 1) % 9 == 0:
-            table_data.append([''] * len(table_data[0]))  # Add an empty row
             story.append(Table(table_data, repeatRows=1))
             story.append(Spacer(1, 170))  # Add spacer with the same height as the logo
             table_data = [['CCB', 'Usuário', 'Cliente', 'Valor Bruto', 'Tabela', 'Repasse']]  # Reset table data
