@@ -45,15 +45,15 @@ import numpy as np
 from PIL import Image, ImageEnhance
 import cv2
 
+# Configure session
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
-
-# Configure session
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)  # Sessions last 24 hours
-app.config['SESSION_COOKIE_SECURE'] = True  # Only send cookies over HTTPS
-app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to session cookie
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
 Session(app)
 
 # Initialize database
@@ -68,8 +68,6 @@ class Contrato(db.Model):
     valor = db.Column(db.Float, nullable=False)
     # Add other fields as necessary
 
-# Initialize auth client
-# Initialize auth client
 # Initialize auth client
 auth_client = AuthClient(
     auth_server_url=os.getenv('AUTH_SERVER_URL', 'https://af360bank.onrender.com'),
@@ -747,8 +745,6 @@ def busca():
     if not dados:
         return render_template('error.html')
     return render_template('busca.html')
-
-from datetime import datetime
 
 @app.route('/preview_ccbs')
 def preview_ccbs():
