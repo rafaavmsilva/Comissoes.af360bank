@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, make_response
+from sqlalchemy import Column, Integer, String, Float
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from datetime import datetime, timedelta
 from functools import wraps
@@ -12,6 +13,7 @@ from werkzeug.utils import secure_filename
 import logging
 from logging.handlers import RotatingFileHandler
 from flask_session import Session
+from flask_sqlalchemy import SQLAlchemy
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
@@ -54,6 +56,20 @@ app.config['SESSION_COOKIE_SECURE'] = True  # Only send cookies over HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to session cookie
 Session(app)
 
+# Initialize database
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# Define the Contrato model
+class Contrato(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    usuario = db.Column(db.String(80), nullable=False)
+    valor = db.Column(db.Float, nullable=False)
+    # Add other fields as necessary
+
+# Initialize auth client
+# Initialize auth client
 # Initialize auth client
 auth_client = AuthClient(
     auth_server_url=os.getenv('AUTH_SERVER_URL', 'https://af360bank.onrender.com'),
@@ -790,9 +806,13 @@ def deletar_dados_usuario():
             return jsonify({'success': False, 'message': 'Usuário não especificado.'}), 400
 
         # Logic to delete user data from the database or data source
-        # Example:
-        # db.session.query(Contrato).filter_by(usuario=usuario).delete()
-        # db.session.commit()
+        contratos_to_delete = db.session.query(Contrato).filter_by(usuario=usuario).all()
+        if not contratos_to_delete:
+            return jsonify({'success': False, 'message': 'Nenhum dado encontrado para o usuário especificado.'}), 404
+
+        for contrato in contratos_to_delete:
+            db.session.delete(contrato)
+        db.session.commit()
 
         return jsonify({'success': True, 'message': 'Dados do usuário deletados com sucesso!'})
     except Exception as e:
