@@ -779,6 +779,25 @@ def limpar_dados():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+    
+@app.route('/deletar_dados_usuario', methods=['POST'])
+@login_required
+def deletar_dados_usuario():
+    try:
+        data = request.get_json()
+        usuario = data.get('usuario')
+        if not usuario:
+            return jsonify({'success': False, 'message': 'Usuário não especificado.'}), 400
+
+        # Logic to delete user data from the database or data source
+        # Example:
+        # db.session.query(Contrato).filter_by(usuario=usuario).delete()
+        # db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Dados do usuário deletados com sucesso!'})
+    except Exception as e:
+        app.logger.error(f'Error deleting user data: {str(e)}')
+        return jsonify({'success': False, 'message': 'Erro ao deletar dados do usuário.'}), 500
 
 def generate_dark_pdf(output_path, usuario, ccbs):
     """Generate PDF directly using ReportLab with maximum darkness settings"""

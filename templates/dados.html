@@ -115,6 +115,12 @@
                         Ordenar por Valor
                     </button>
                 </div>
+                <div class="filter-group">
+                    <button class="delete-user-data-button" onclick="deleteUserData()">
+                        <span class="material-icons">delete</span>
+                        Deletar Dados do Usuário
+                    </button>
+                </div>
             </div>
 
             <div class="table-container">
@@ -249,6 +255,39 @@
                     console.error('Error:', error);
                     alert('Erro ao limpar dados. Por favor, tente novamente.');
                 });
+            }
+        }
+
+        function deleteUserData() {
+            const selectedUser = document.getElementById('usuario-filter').value;
+            if (!selectedUser) {
+                alert('Por favor, selecione um usuário para deletar os dados.');
+                return;
+            }
+
+            if (confirm(`Tem certeza que deseja deletar todos os dados do usuário ${selectedUser}?`)) {
+                if (confirm('Esta ação não pode ser desfeita. Tem certeza que deseja continuar?')) {
+                    fetch('/deletar_dados_usuario', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ usuario: selectedUser })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Dados do usuário deletados com sucesso!');
+                            location.reload();
+                        } else {
+                            alert('Erro ao deletar dados: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Erro ao deletar dados. Por favor, tente novamente.');
+                    });
+                }
             }
         }
     </script>
