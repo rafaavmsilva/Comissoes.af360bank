@@ -63,9 +63,14 @@ db = SQLAlchemy(app)
 
 # Define the Contrato model
 class Contrato(db.Model):
+    __tablename__ = 'contrato'  # Explicitly specify the table name if necessary
     id = db.Column(db.Integer, primary_key=True)
     usuario = db.Column(db.String(80), nullable=False)
     valor = db.Column(db.Float, nullable=False)
+
+# Create the table if it doesn't exist
+with app.app_context():
+    db.create_all()
 
 # Initialize auth client
 auth_client = AuthClient(
