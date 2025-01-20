@@ -835,7 +835,9 @@ def deletar_dados_usuario():
             return jsonify({'success': False, 'message': 'Usuário não especificado.'}), 400
 
         # Retrieve the uploaded data from the session
-        uploaded_data = json.loads(session.get('uploaded_data', '[]'))
+        uploaded_data_json = session.get('uploaded_data', '[]')
+        app.logger.info(f"Uploaded data JSON from session: {uploaded_data_json}")
+        uploaded_data = json.loads(uploaded_data_json)
 
         # Log the current uploaded data for debugging
         app.logger.info(f"Current uploaded data: {uploaded_data}")
@@ -850,6 +852,7 @@ def deletar_dados_usuario():
 
         # Update the session with the modified data
         session['uploaded_data'] = json.dumps(uploaded_data)
+        app.logger.info(f"Updated session data: {session['uploaded_data']}")
 
         return jsonify({'success': True, 'message': 'Dados do usuário deletados com sucesso!'})
     except Exception as e:
