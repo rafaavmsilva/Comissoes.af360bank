@@ -49,7 +49,6 @@ import csv
 # Configure session
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
@@ -810,13 +809,13 @@ def load_csv_data(file_path):
 @app.route('/upload_csv', methods=['POST'])
 @login_required
 def upload_csv():
+    global uploaded_data
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': 'No file part'}), 400
     file = request.files['file']
     if file.filename == '':
         return jsonify({'success': False, 'message': 'No selected file'}), 400
     if file:
-        global uploaded_data
         uploaded_data = read_file(file)
         if uploaded_data is None:
             return jsonify({'success': False, 'message': 'No data found in the file'}), 400
@@ -825,6 +824,7 @@ def upload_csv():
 @app.route('/deletar_dados_usuario', methods=['POST'])
 @login_required
 def deletar_dados_usuario():
+    global uploaded_data
     try:
         data = request.get_json()
         usuario = data.get('usuario')
@@ -835,7 +835,6 @@ def deletar_dados_usuario():
         app.logger.info(f"Current uploaded data: {uploaded_data}")
 
         # Logic to delete user data from the in-memory data
-        global uploaded_data
         initial_length = len(uploaded_data)
         uploaded_data = [row for row in uploaded_data if row.get('Usuário') != usuario]
         final_length = len(uploaded_data)
