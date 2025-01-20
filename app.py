@@ -44,6 +44,7 @@ import os
 import numpy as np
 from PIL import Image, ImageEnhance
 import cv2
+import csv
 
 # Configure session
 app = Flask(__name__)
@@ -107,6 +108,9 @@ if not app.debug:
 # Configure debug logging
 if app.debug:
     app.logger.setLevel(logging.DEBUG)
+
+# Global variable to store uploaded data
+uploaded_data = []
 
 @app.before_request
 def before_request():
@@ -796,6 +800,28 @@ def limpar_dados():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
     
+# Function to load CSV data into memory
+def load_csv_data(file_path):
+    global uploaded_data
+    with open(file_path, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        uploaded_data = [row for row in reader]
+
+app.route('/upload_csv', methods=['POST'])
+@login_required
+def upload_csv():
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'message': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'No selected file'}), 400
+    if file:
+        global uploaded_data
+        uploaded_data = read_file(file)
+        if uploaded_data is None:
+            return jsonify({'success': False, 'message': 'No data found in the file'}), 400
+        return jsonify({'success': True, 'message': 'File uploaded and data loaded successfully'})
+    
 @app.route('/deletar_dados_usuario', methods=['POST'])
 @login_required
 def deletar_dados_usuario():
@@ -805,14 +831,14 @@ def deletar_dados_usuario():
         if not usuario:
             return jsonify({'success': False, 'message': 'Usuário não especificado.'}), 400
 
-        # Logic to delete user data from the database or data source
-        contratos_to_delete = db.session.query(Contrato).filter_by(usuario=usuario).all()
-        if not contratos_to_delete:
-            return jsonify({'success': False, 'message': 'Nenhum dado encontrado para o usuário especificado.'}), 404
+        # Logic to delete user data from the in-memory data
+        global uploaded_data
+        initial_length = len(uploaded_data)
+        uploaded_data = [row for row in uploaded_data if row.get('Usuário') != usuario]
+        final_length = len(uploaded_data)
 
-        for contrato in contratos_to_delete:
-            db.session.delete(contrato)
-        db.session.commit()
+        if initial_length == final_length:
+            return jsonify({'success': False, 'message': 'Nenhum dado encontrado para o usuário especificado.'}), 404
 
         return jsonify({'success': True, 'message': 'Dados do usuário deletados com sucesso!'})
     except Exception as e:
