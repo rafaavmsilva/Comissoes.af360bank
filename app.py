@@ -47,34 +47,20 @@ import cv2
 import csv
 import json
 
-# Configure session
+# Global variable to store uploaded data
+uploaded_data = []
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///temp_data.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 Session(app)
-
-# Global variable to store uploaded data
-uploaded_data = []
-
-# Initialize database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///temp_data.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-
-# Define the Contrato model
-class Contrato(db.Model):
-    __tablename__ = 'contrato'  # Explicitly specify the table name if necessary
-    id = db.Column(db.Integer, primary_key=True)
-    usuario = db.Column(db.String(80), nullable=False)
-    valor = db.Column(db.Float, nullable=False)
-
-# Create the table if it doesn't exist
-with app.app_context():
-    db.create_all()
 
 class UploadedData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -95,9 +81,16 @@ class UploadedData(db.Model):
     status = db.Column(db.String(80))
     data_nascimento_fundacao = db.Column(db.String(80))
 
-# Ensure the database is created
+# Create the table if it doesn't exist
 with app.app_context():
     db.create_all()
+
+# Define the Contrato model
+class Contrato(db.Model):
+    __tablename__ = 'contrato'  # Explicitly specify the table name if necessary
+    id = db.Column(db.Integer, primary_key=True)
+    usuario = db.Column(db.String(80), nullable=False)
+    valor = db.Column(db.Float, nullable=False)
 
 # Initialize auth client
 auth_client = AuthClient(
