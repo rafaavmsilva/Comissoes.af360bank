@@ -61,7 +61,7 @@ Session(app)
 uploaded_data = []
 
 # Initialize database
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///temp_data.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -75,6 +75,27 @@ class Contrato(db.Model):
 # Create the table if it doesn't exist
 with app.app_context():
     db.create_all()
+
+class UploadedData(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ccb = db.Column(db.String(80))
+    data_digitacao = db.Column(db.String(80))
+    data_desembolso = db.Column(db.String(80))
+    cpf_cnpj = db.Column(db.String(80))
+    nome = db.Column(db.String(80))
+    tabela = db.Column(db.String(80))
+    parcelas = db.Column(db.Integer)
+    valor_parcela = db.Column(db.Float)
+    valor_bruto = db.Column(db.Float)
+    valor_liquido = db.Column(db.Float)
+    link_assinatura = db.Column(db.String(255))
+    parceiro = db.Column(db.String(80))
+    usuario = db.Column(db.String(80))
+    email = db.Column(db.String(80))
+    status = db.Column(db.String(80))
+    data_nascimento_fundacao = db.Column(db.String(80))
+
+db.create_all()
 
 # Initialize auth client
 auth_client = AuthClient(
@@ -792,13 +813,16 @@ def verificar_ccb(ccb):
         return jsonify({'exists': False, 'error': 'Erro ao verificar CCB'})
 
 @app.route('/limpar_dados', methods=['POST'])
+@login_required
 def limpar_dados():
-    """Clear all session data."""
     try:
-        session.clear()
-        return jsonify({'success': True})
+        # Clear all data from the database
+        db.session.query(UploadedData).delete()
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Dados limpos com sucesso!'})
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
+        app.logger.error(f'Error clearing data: {str(e)}')
+        return jsonify({'success': False, 'message': 'Erro ao limpar dados.'}), 500
     
 # Function to load CSV data into memory
 def load_csv_data(file_path):
@@ -819,11 +843,30 @@ def upload_csv():
         uploaded_data = read_file(file)
         if uploaded_data is None:
             return jsonify({'success': False, 'message': 'No data found in the file'}), 400
-        # Store the uploaded data in the session
-        session['uploaded_data'] = json.dumps(uploaded_data)
-        # Log the uploaded data for debugging
-        app.logger.info(f"Uploaded data: {uploaded_data}")
-        app.logger.info(f"Session data after upload: {session['uploaded_data']}")
+        
+        # Store the uploaded data in the database
+        for row in uploaded_data:
+            data_entry = UploadedData(
+                ccb=row.get('CCB'),
+                data_digitacao=row.get('Data de Digitação'),
+                data_desembolso=row.get('Data do Desembolso'),
+                cpf_cnpj=row.get('CPF/CNPJ'),
+                nome=row.get('Nome'),
+                tabela=row.get('Tabela'),
+                parcelas=row.get('Parcelas'),
+                valor_parcela=row.get('Valor da Parcela'),
+                valor_bruto=row.get('Valor Bruto'),
+                valor_liquido=row.get('Valor Líquido'),
+                link_assinatura=row.get('Link de assinatura'),
+                parceiro=row.get('Parceiro'),
+                usuario=row.get('Usuário'),
+                email=row.get('E-mail'),
+                status=row.get('Status'),
+                data_nascimento_fundacao=row.get('Data Nascimento/Fundação')
+            )
+            db.session.add(data_entry)
+        db.session.commit()
+        
         return jsonify({'success': True, 'message': 'File uploaded and data loaded successfully'})
     
 @app.route('/deletar_dados_usuario', methods=['POST'])
@@ -835,25 +878,12 @@ def deletar_dados_usuario():
         if not usuario:
             return jsonify({'success': False, 'message': 'Usuário não especificado.'}), 400
 
-        # Retrieve the uploaded data from the session
-        uploaded_data_json = session.get('uploaded_data', '[]')
-        app.logger.info(f"Uploaded data JSON from session: {uploaded_data_json}")
-        uploaded_data = json.loads(uploaded_data_json)
+        # Delete user data from the database
+        deleted_rows = UploadedData.query.filter_by(usuario=usuario).delete()
+        db.session.commit()
 
-        # Log the current uploaded data for debugging
-        app.logger.info(f"Current uploaded data: {uploaded_data}")
-
-        # Logic to delete user data from the in-memory data
-        initial_length = len(uploaded_data)
-        uploaded_data = [row for row in uploaded_data if row.get('Usuário') != usuario]
-        final_length = len(uploaded_data)
-
-        if initial_length == final_length:
+        if deleted_rows == 0:
             return jsonify({'success': False, 'message': 'Nenhum dado encontrado para o usuário especificado.'}), 404
-
-        # Update the session with the modified data
-        session['uploaded_data'] = json.dumps(uploaded_data)
-        app.logger.info(f"Updated session data: {session['uploaded_data']}")
 
         return jsonify({'success': True, 'message': 'Dados do usuário deletados com sucesso!'})
     except Exception as e:
