@@ -45,6 +45,7 @@ import numpy as np
 from PIL import Image, ImageEnhance
 import cv2
 import csv
+import json
 
 # Configure session
 app = Flask(__name__)
@@ -809,7 +810,6 @@ def load_csv_data(file_path):
 @app.route('/upload_csv', methods=['POST'])
 @login_required
 def upload_csv():
-    global uploaded_data
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': 'No file part'}), 400
     file = request.files['file']
@@ -819,6 +819,8 @@ def upload_csv():
         uploaded_data = read_file(file)
         if uploaded_data is None:
             return jsonify({'success': False, 'message': 'No data found in the file'}), 400
+        # Store the uploaded data in the session
+        session['uploaded_data'] = json.dumps(uploaded_data)
         # Log the uploaded data for debugging
         app.logger.info(f"Uploaded data: {uploaded_data}")
         return jsonify({'success': True, 'message': 'File uploaded and data loaded successfully'})
@@ -826,12 +828,14 @@ def upload_csv():
 @app.route('/deletar_dados_usuario', methods=['POST'])
 @login_required
 def deletar_dados_usuario():
-    global uploaded_data
     try:
         data = request.get_json()
         usuario = data.get('usuario')
         if not usuario:
             return jsonify({'success': False, 'message': 'Usuário não especificado.'}), 400
+
+        # Retrieve the uploaded data from the session
+        uploaded_data = json.loads(session.get('uploaded_data', '[]'))
 
         # Log the current uploaded data for debugging
         app.logger.info(f"Current uploaded data: {uploaded_data}")
@@ -843,6 +847,9 @@ def deletar_dados_usuario():
 
         if initial_length == final_length:
             return jsonify({'success': False, 'message': 'Nenhum dado encontrado para o usuário especificado.'}), 404
+
+        # Update the session with the modified data
+        session['uploaded_data'] = json.dumps(uploaded_data)
 
         return jsonify({'success': True, 'message': 'Dados do usuário deletados com sucesso!'})
     except Exception as e:
