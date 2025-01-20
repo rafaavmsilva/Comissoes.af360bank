@@ -97,6 +97,10 @@ class UploadedData(db.Model):
 
 db.create_all()
 
+# Ensure the database is created
+with app.app_context():
+    db.create_all()
+    
 # Initialize auth client
 auth_client = AuthClient(
     auth_server_url=os.getenv('AUTH_SERVER_URL', 'https://af360bank.onrender.com'),
