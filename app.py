@@ -807,7 +807,7 @@ def load_csv_data(file_path):
         reader = csv.DictReader(csvfile)
         uploaded_data = [row for row in reader]
 
-app.route('/upload_csv', methods=['POST'])
+@app.route('/upload_csv', methods=['POST'])
 @login_required
 def upload_csv():
     if 'file' not in request.files:
@@ -830,6 +830,9 @@ def deletar_dados_usuario():
         usuario = data.get('usuario')
         if not usuario:
             return jsonify({'success': False, 'message': 'Usuário não especificado.'}), 400
+
+        # Log the current uploaded data for debugging
+        app.logger.info(f"Current uploaded data: {uploaded_data}")
 
         # Logic to delete user data from the in-memory data
         global uploaded_data
