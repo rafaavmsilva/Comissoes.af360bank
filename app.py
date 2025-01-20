@@ -57,6 +57,9 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 Session(app)
 
+# Global variable to store uploaded data
+uploaded_data = []
+
 # Initialize database
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -108,9 +111,6 @@ if not app.debug:
 # Configure debug logging
 if app.debug:
     app.logger.setLevel(logging.DEBUG)
-
-# Global variable to store uploaded data
-uploaded_data = []
 
 @app.before_request
 def before_request():
