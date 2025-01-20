@@ -95,12 +95,10 @@ class UploadedData(db.Model):
     status = db.Column(db.String(80))
     data_nascimento_fundacao = db.Column(db.String(80))
 
-db.create_all()
-
 # Ensure the database is created
 with app.app_context():
     db.create_all()
-    
+
 # Initialize auth client
 auth_client = AuthClient(
     auth_server_url=os.getenv('AUTH_SERVER_URL', 'https://af360bank.onrender.com'),
@@ -871,6 +869,10 @@ def upload_csv():
             db.session.add(data_entry)
         db.session.commit()
         
+        # Log the stored data for debugging
+        stored_data = UploadedData.query.all()
+        app.logger.info(f"Stored data: {[data.__dict__ for data in stored_data]}")
+
         return jsonify({'success': True, 'message': 'File uploaded and data loaded successfully'})
     
 @app.route('/deletar_dados_usuario', methods=['POST'])
@@ -882,12 +884,20 @@ def deletar_dados_usuario():
         if not usuario:
             return jsonify({'success': False, 'message': 'Usuário não especificado.'}), 400
 
+        # Log the current data for debugging
+        current_data = UploadedData.query.all()
+        app.logger.info(f"Current data before deletion: {[data.__dict__ for data in current_data]}")
+
         # Delete user data from the database
         deleted_rows = UploadedData.query.filter_by(usuario=usuario).delete()
         db.session.commit()
 
         if deleted_rows == 0:
             return jsonify({'success': False, 'message': 'Nenhum dado encontrado para o usuário especificado.'}), 404
+
+        # Log the remaining data for debugging
+        remaining_data = UploadedData.query.all()
+        app.logger.info(f"Remaining data after deletion: {[data.__dict__ for data in remaining_data]}")
 
         return jsonify({'success': True, 'message': 'Dados do usuário deletados com sucesso!'})
     except Exception as e:
