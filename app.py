@@ -819,6 +819,8 @@ def upload_csv():
         uploaded_data = read_file(file)
         if uploaded_data is None:
             return jsonify({'success': False, 'message': 'No data found in the file'}), 400
+        # Log the uploaded data for debugging
+        app.logger.info(f"Uploaded data: {uploaded_data}")
         return jsonify({'success': True, 'message': 'File uploaded and data loaded successfully'})
     
 @app.route('/deletar_dados_usuario', methods=['POST'])
