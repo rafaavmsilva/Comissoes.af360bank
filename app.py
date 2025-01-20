@@ -823,6 +823,7 @@ def upload_csv():
         session['uploaded_data'] = json.dumps(uploaded_data)
         # Log the uploaded data for debugging
         app.logger.info(f"Uploaded data: {uploaded_data}")
+        app.logger.info(f"Session data after upload: {session['uploaded_data']}")
         return jsonify({'success': True, 'message': 'File uploaded and data loaded successfully'})
     
 @app.route('/deletar_dados_usuario', methods=['POST'])
