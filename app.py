@@ -66,7 +66,6 @@ class Contrato(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     usuario = db.Column(db.String(80), nullable=False)
     valor = db.Column(db.Float, nullable=False)
-    # Add other fields as necessary
 
 # Initialize auth client
 auth_client = AuthClient(
