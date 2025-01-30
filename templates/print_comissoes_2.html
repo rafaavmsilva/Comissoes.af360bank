@@ -206,7 +206,21 @@
 </head>
 <body>
     <div class="container">
-        <h2 class="titulo">Relatório de Comissões</h2>
+        <div class="header-section" style="display: flex; align-items: center;">
+            <!-- Logo container (fixed) -->
+            <div style="flex-shrink: 0;">
+                <img
+                    src="{{ url_for('static', filename='images/logo.png') }}"
+                    alt="Logo"
+                    style="height: 120px; width: auto; margin-right: -15px;"
+                />
+            </div>
+
+            <!-- Title container (flex-grow, centered) -->
+            <div style="flex: 1; text-align: center;">
+                <h2 class="titulo" style="margin: 0;">Relatório de Comissões</h2>
+            </div>
+        </div>
 
         <div class="totals-bar">
             <div class="totals-grid">
