@@ -632,7 +632,7 @@ def tabela():
             'comissao_repassada': config.get('comissao_repassada', 0)
         }
     
-    return render_template('tabela.html', tabelas=tabelas_data)
+    return render_template('Tabela.html', tabelas=tabelas_data)
 
 @app.route('/salvar_tabela', methods=['POST'])
 @login_required
