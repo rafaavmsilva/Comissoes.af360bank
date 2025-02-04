@@ -164,57 +164,57 @@ def set_default_commission_config():
     default_config = {
         'BRAVE 1 - 50 a 250': {
             'tipo_comissao': 'percentual',
-            'comissao_recebida': 28,
-            'comissao_repassada': 26,
+            'comissao_recebida': 31,
+            'comissao_repassada': 31,
             'valor_minimo': 50,
             'valor_maximo': 250
         },
         'BRAVE 2 - 250,01 - 3800': {
             'tipo_comissao': 'percentual',
-            'comissao_recebida': 24,
-            'comissao_repassada': 22,
+            'comissao_recebida': 27,
+            'comissao_repassada': 27,
             'valor_minimo': 250.01,
             'valor_maximo': 3800
         },
         'BRAVE 3 - 3800,01 - 30.000': {
             'tipo_comissao': 'fixa',
-            'comissao_fixa_recebida': 1200,
-            'comissao_fixa_repassada': 1050,
+            'comissao_fixa_recebida': 2295,
+            'comissao_fixa_repassada': 2295,
             'valor_minimo': 3800.01,
             'valor_maximo': 30000
         },
         'BRAVE DIFERENCIADA - COM REDUÇÃO': {
             'tipo_comissao': 'percentual',
             'comissao_recebida': 8,
-            'comissao_repassada': 6,
+            'comissao_repassada': 8,
             'valor_minimo': 0,
             'valor_maximo': float('inf')
         },
         'VIA INVEST 1 - 75 A 250': {
             'tipo_comissao': 'percentual',
             'comissao_recebida': 26,
-            'comissao_repassada': 24,
+            'comissao_repassada': 26,
             'valor_minimo': 75,
             'valor_maximo': 250
         },
         'VIA INVEST 2 - 250,01 A 1.000': {
             'tipo_comissao': 'percentual',
             'comissao_recebida': 21,
-            'comissao_repassada': 19,
+            'comissao_repassada': 21,
             'valor_minimo': 250.01,
             'valor_maximo': 1000
         },
         'VIA INVEST 3 - 1.000,01 A 30.000': {
             'tipo_comissao': 'percentual',
             'comissao_recebida': 15,
-            'comissao_repassada': 13,
+            'comissao_repassada': 15,
             'valor_minimo': 1000.01,
             'valor_maximo': 30000
         },
         'VIA INVEST DIF - COM REDUÇAO': {
             'tipo_comissao': 'percentual',
-            'comissao_recebida': 10,
-            'comissao_repassada': 8,
+            'comissao_recebida': 12,
+            'comissao_repassada': 12,
             'valor_minimo': 0,
             'valor_maximo': float('inf')
         },
