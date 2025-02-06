@@ -373,71 +373,59 @@ def format_client_name(nome: str, documento: str) -> str:
         return f"{nome} ({documento})"
     return nome
 
-def get_table_config(tabela: str, valor: float = None):
-    """Get commission configuration for a table based on value range."""
+def get_table_config(tabela: str, valor: float = None, data_transacao: datetime = None):
+    """Get commission configuration for a table based on value range and date."""
     try:
         tabela_config = session.get('tabela_config', {})
+        DATE_THRESHOLD = datetime.strptime('28/01/2025', '%d/%m/%Y')
         
-        # Se não houver configuração, retorna configuração padrão
-        if not tabela_config:
-            return {
-                'tipo_comissao': 'percentual',
-                'comissao_recebida': 0,
-                'comissao_repassada': 0,
-                'nome_tabela': tabela
-            }
-        
-        # Se a tabela existir exatamente como está, retorna ela
-        if tabela in tabela_config:
-            config = tabela_config[tabela]
-            config['nome_tabela'] = tabela
-            return config
-            
-        # Se não encontrou a tabela exata, procura pela faixa de valor
-        for nome_tabela, config in tabela_config.items():
-            # Pula tabelas especiais
-            if nome_tabela in ['NÃO COMISSIONADO', 'Via AF - TC Diferenciada']:
-                continue
-                
-            # Se a tabela atual é diferenciada, só procura em tabelas diferenciadas
-            if 'DIFERENCIADA' in tabela or 'DIF' in tabela:
-                if 'DIFERENCIADA' not in nome_tabela and 'DIF' not in nome_tabela:
-                    continue
-            # Se a tabela atual é padrão (com números), só procura em tabelas padrão
-            else:
-                if 'DIFERENCIADA' in nome_tabela or 'DIF' in nome_tabela:
-                    continue
-            
-            valor_minimo = float(config.get('valor_minimo', 0))
-            valor_maximo = float(config.get('valor_maximo', float('inf')))
-            
-            # Verifica se é da mesma empresa (BRAVE ou VIA INVEST)
-            mesma_empresa = False
-            if tabela.startswith('BRAVE') and nome_tabela.startswith('BRAVE'):
-                mesma_empresa = True
-            elif tabela.startswith('VIA') and nome_tabela.startswith('VIA'):
-                mesma_empresa = True
-                
-            if mesma_empresa and valor and valor_minimo <= valor <= valor_maximo:
-                config['nome_tabela'] = nome_tabela
-                return config
-        
-        # Se não encontrou nenhuma tabela correspondente
-        return {
+        # Default config
+        default_config = {
             'tipo_comissao': 'percentual',
             'comissao_recebida': 0,
             'comissao_repassada': 0,
             'nome_tabela': tabela
         }
+        
+        # Get base config from table
+        config = None
+        if tabela in tabela_config:
+            config = tabela_config[tabela].copy()
+            config['nome_tabela'] = tabela
+        else:
+            for nome_tabela, cfg in tabela_config.items():
+                if ('DIFERENCIADA' in tabela or 'DIF' in tabela) != ('DIFERENCIADA' in nome_tabela or 'DIF' in nome_tabela):
+                    continue
+                    
+                mesma_empresa = (tabela.startswith('BRAVE') and nome_tabela.startswith('BRAVE')) or \
+                              (tabela.startswith('VIA') and nome_tabela.startswith('VIA'))
+                
+                if mesma_empresa and valor:
+                    valor_minimo = float(cfg.get('valor_minimo', 0))
+                    valor_maximo = float(cfg.get('valor_maximo', float('inf')))
+                    if valor_minimo <= valor <= valor_maximo:
+                        config = cfg.copy()
+                        config['nome_tabela'] = nome_tabela
+                        break
+        
+        if not config:
+            return default_config
+            
+        # Adjust commission rates based on date
+        if data_transacao and data_transacao <= DATE_THRESHOLD:
+            # Pre-2025 rates
+            if config['tipo_comissao'] == 'percentual':
+                config['comissao_recebida'] = float(config.get('comissao_recebida', 0)) - 3
+                config['comissao_repassada'] = float(config.get('comissao_repassada', 0)) - 5
+            else:
+                config['comissao_fixa_recebida'] = float(config.get('comissao_fixa_recebida', 0)) - 95
+                config['comissao_fixa_repassada'] = float(config.get('comissao_fixa_repassada', 0)) - 150
+                
+        return config
         
     except Exception as e:
         app.logger.error(f'Erro ao obter configuração da tabela {tabela}: {str(e)}')
-        return {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 0,
-            'comissao_repassada': 0,
-            'nome_tabela': tabela
-        }
+        return default_config
 
 def calcular_comissoes(dados: List[Dict]):
     """Calculate commissions based on provided data and table configurations."""
@@ -470,64 +458,26 @@ def calcular_comissoes(dados: List[Dict]):
                 
                 linha['Data'] = data_transacao.strftime('%d/%m/%Y')
                 
-            except Exception as e:
-                data_transacao = datetime.now()
-                erro_linha['data'] = f'Erro ao processar data: {str(e)}'
-                linha['Data'] = data_transacao.strftime('%d/%m/%Y')
-            
-            if not ccb:
-                ccb = f"SEM_CCB_{len(comissoes)}"
-                erro_linha['ccb'] = 'CCB não encontrado'
-            
-            try:
                 # Process valores and get config
                 valor_bruto = linha.get('Valor Bruto', 0)
                 valor = convert_to_float(valor_bruto) if valor_bruto else 0
                 tabela = linha.get('Tabela', '')
                 
-                # Format client info
-                nome = linha.get('Nome', linha.get('nome', ''))
-                documento = linha.get('Documento', linha.get('documento', linha.get('CPF', '')))
-                linha['Cliente'] = format_client_name(nome, documento)
+                # Get config with date
+                config = get_table_config(tabela, valor, data_transacao)
                 
-                if not tabela:
-                    erro_linha['tabela'] = 'Tabela não especificada'
-                    tabela = 'TABELA_PADRAO'
-                
-                # Get and apply config based on date
-                config = get_table_config(tabela, valor)
-                if not config:
-                    erro_linha['config'] = f'Configuração não encontrada para tabela {tabela}'
-                    config = {'tipo_comissao': 'percentual', 'comissao_recebida': 0, 'comissao_repassada': 0}
-                
-                # Calculate commissions
                 try:
                     tipo_comissao = config.get('tipo_comissao', 'percentual')
                     valor_liquido = convert_to_float(linha.get('Valor Líquido', 0))
                     
-                    # Select rates based on date
-                    if data_transacao > DATE_THRESHOLD:
-                        if tipo_comissao == 'percentual':
-                            comissao_recebida = float(config.get('comissao_recebida', 0))
-                            comissao_repassada = comissao_recebida  # Same rate post-2025
-                        else:
-                            comissao_fixa_recebida = float(config.get('comissao_fixa_recebida', 0))
-                            comissao_fixa_repassada = comissao_fixa_recebida  # Same value post-2025
-                    else:
-                        if tipo_comissao == 'percentual':
-                            comissao_recebida = float(config.get('comissao_recebida', 0))
-                            comissao_repassada = float(config.get('comissao_repassada', 0))
-                        else:
-                            comissao_fixa_recebida = float(config.get('comissao_fixa_recebida', 0))
-                            comissao_fixa_repassada = float(config.get('comissao_fixa_repassada', 0))
-                    
-                    # Calculate final values
                     if tipo_comissao == 'fixa':
-                        comissao_recebida_valor = comissao_fixa_recebida
-                        comissao_repassada_valor = comissao_fixa_repassada
+                        comissao_recebida_valor = float(config.get('comissao_fixa_recebida', 0))
+                        comissao_repassada_valor = float(config.get('comissao_fixa_repassada', 0))
                         comissao_recebida_percentual = (comissao_recebida_valor / valor * 100) if valor > 0 else 0
                         comissao_repassada_percentual = (comissao_repassada_valor / valor_liquido * 100) if valor_liquido > 0 else 0
                     else:
+                        comissao_recebida = float(config.get('comissao_recebida', 0))
+                        comissao_repassada = float(config.get('comissao_repassada', 0))
                         comissao_recebida_valor = valor * (comissao_recebida / 100)
                         comissao_repassada_valor = valor_liquido * (comissao_repassada / 100)
                         comissao_recebida_percentual = comissao_recebida
