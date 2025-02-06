@@ -244,7 +244,7 @@
                                 <th>Valor Líquido</th>
                                 <th>Comissão Recebida</th>
                                 <th>Comissão Repassada</th>
-                                <th>Status</th>
+                                <th><Data></Data></th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
@@ -265,13 +265,7 @@
                                     {{ "R$ {:,.2f}".format(item.get('comissao_repassada_valor', 0)).replace(',', '_').replace('.', ',').replace('_', '.') }}
                                     ({{ "{:.2f}%".format(item.get('comissao_repassada_percentual', 0)).replace('.', ',') }})
                                 </td>
-                                <td>
-                                    {% if item.get('erros') %}
-                                        <span class="badge badge-warning">Atenção</span>
-                                    {% else %}
-                                        <span class="badge badge-success">OK</span>
-                                    {% endif %}
-                                </td>
+                                <td>{{ item.get('Data', 'N/A') }}</td>
                                 <td class="action-buttons">
                                     <a href="{{ url_for('resultado', ccb=item.get('CCB', '')) }}" class="botao-detalhes">
                                         <span class="material-icons">visibility</span>

@@ -442,20 +442,30 @@ def get_table_config(tabela: str, valor: float = None):
 def calcular_comissoes(dados: List[Dict]):
     """Calculate commissions based on provided data and table configurations."""
     comissoes = {}
-    erros = []  # Lista para armazenar erros
+    erros = []
+    DATE_THRESHOLD = datetime.strptime('28/01/2025', '%d/%m/%Y')
     
     try:
         for linha in dados:
             ccb = linha.get("CCB", "")
             erro_linha = {}
             
-            # Validação e limpeza do CCB
+            # Parse transaction date
+            data_str = linha.get('Data Digitacao', linha.get('Data Desembolso', ''))
+            try:
+                data_transacao = datetime.strptime(data_str, '%d/%m/%Y')
+                linha['Data'] = data_transacao.strftime('%d/%m/%Y')
+            except ValueError:
+                data_transacao = datetime.now()
+                erro_linha['data'] = 'Data inválida, usando data atual'
+                linha['Data'] = data_transacao.strftime('%d/%m/%Y')
+            
+            # Validate CCB
             if not ccb:
                 ccb = f"SEM_CCB_{len(comissoes)}"
                 erro_linha['ccb'] = 'CCB não encontrado'
             
             try:
-                # Validação e limpeza do valor bruto
                 valor_bruto = linha.get('Valor Bruto')
                 tabela = linha.get('Tabela', '')
                 
@@ -466,9 +476,9 @@ def calcular_comissoes(dados: List[Dict]):
                 
                 if not tabela:
                     erro_linha['tabela'] = 'Tabela não especificada'
-                    tabela = 'TABELA_PADRAO'  # Usar uma tabela padrão
+                    tabela = 'TABELA_PADRAO'
                 
-                # Processamento do valor bruto
+                # Process valor bruto
                 try:
                     valor = convert_to_float(valor_bruto) if valor_bruto else 0
                     if valor <= 0:
@@ -480,7 +490,7 @@ def calcular_comissoes(dados: List[Dict]):
                 
                 linha['Valor Bruto'] = valor
                 
-                # Get table configuration based on value range
+                # Get table config and adjust based on date
                 config = get_table_config(tabela, valor)
                 if not config:
                     erro_linha['config'] = f'Configuração não encontrada para tabela {tabela}'
@@ -490,15 +500,22 @@ def calcular_comissoes(dados: List[Dict]):
                         'comissao_repassada': 0,
                         'nome_tabela': tabela
                     }
+                elif data_transacao > DATE_THRESHOLD:
+                    # Adjust commission rates for post-2025 transactions
+                    if config.get('tipo_comissao') == 'percentual':
+                        config['comissao_recebida'] = float(config['comissao_recebida']) * 0.9  # 10% reduction
+                        config['comissao_repassada'] = float(config['comissao_repassada']) * 0.9
+                    elif config.get('tipo_comissao') == 'fixa':
+                        config['comissao_fixa_recebida'] = float(config['comissao_fixa_recebida']) * 0.9
+                        config['comissao_fixa_repassada'] = float(config['comissao_fixa_repassada']) * 0.9
                 
-                # Cálculo das comissões
+                # Calculate commissions
                 try:
                     tipo_comissao = config.get('tipo_comissao', 'percentual')
                     valor_liquido = linha.get('Valor Líquido', 0)
                     if isinstance(valor_liquido, str):
                         valor_liquido = convert_to_float(valor_liquido)
                     
-                    # Garantir que valor_liquido seja um número
                     if not valor_liquido or valor_liquido <= 0:
                         valor_liquido = 0
                         app.logger.warning(f"Valor líquido inválido para CCB {ccb}")
@@ -509,42 +526,32 @@ def calcular_comissoes(dados: List[Dict]):
                         comissao_recebida_percentual = (comissao_recebida_valor / valor * 100) if valor > 0 else 0
                         comissao_repassada_percentual = (comissao_repassada_valor / valor_liquido * 100) if valor_liquido > 0 else 0
                     else:
-                        # Pegar as porcentagens da configuração
                         comissao_recebida_percentual = float(config.get('comissao_recebida', 0))
                         comissao_repassada_percentual = float(config.get('comissao_repassada', 0))
-                        
-                        # Calcular valores - recebida sobre bruto, repassada sobre líquido
                         comissao_recebida_valor = valor * (comissao_recebida_percentual / 100)
                         comissao_repassada_valor = valor_liquido * (comissao_repassada_percentual / 100)
-                        
-                        app.logger.debug(f"""
-                        CCB: {ccb}
-                        Valor Bruto: {valor}
-                        Valor Líquido: {valor_liquido}
-                        Comissão Recebida %: {comissao_recebida_percentual}
-                        Comissão Repassada %: {comissao_repassada_percentual}
-                        Comissão Recebida Valor: {comissao_recebida_valor}
-                        Comissão Repassada Valor: {comissao_repassada_valor}
-                        """)
-                
+                    
                     if 'nome_tabela' in config:
                         linha['Tabela'] = config['nome_tabela']
                     
-                    linha['comissao_recebida_valor'] = comissao_recebida_valor
-                    linha['comissao_repassada_valor'] = comissao_repassada_valor
-                    linha['comissao_recebida_percentual'] = comissao_recebida_percentual
-                    linha['comissao_repassada_percentual'] = comissao_repassada_percentual
-                    linha['tipo_comissao'] = tipo_comissao
+                    linha.update({
+                        'comissao_recebida_valor': comissao_recebida_valor,
+                        'comissao_repassada_valor': comissao_repassada_valor,
+                        'comissao_recebida_percentual': comissao_recebida_percentual,
+                        'comissao_repassada_percentual': comissao_repassada_percentual,
+                        'tipo_comissao': tipo_comissao
+                    })
                     
                 except (ValueError, TypeError) as e:
                     erro_linha['calculo'] = f'Erro ao calcular comissões: {str(e)}'
-                    linha['comissao_recebida_valor'] = 0
-                    linha['comissao_repassada_valor'] = 0
-                    linha['comissao_recebida_percentual'] = 0
-                    linha['comissao_repassada_percentual'] = 0
-                    linha['tipo_comissao'] = 'percentual'
+                    linha.update({
+                        'comissao_recebida_valor': 0,
+                        'comissao_repassada_valor': 0,
+                        'comissao_recebida_percentual': 0,
+                        'comissao_repassada_percentual': 0,
+                        'tipo_comissao': 'percentual'
+                    })
                 
-                # Convert other monetary values
                 for campo in ['Valor Parcela', 'Valor Líquido']:
                     if campo in linha:
                         try:
@@ -553,32 +560,23 @@ def calcular_comissoes(dados: List[Dict]):
                             erro_linha[f'conversao_{campo}'] = f'Erro ao converter {campo}: {str(e)}'
                             linha[campo] = 0.0
                 
-                # Adicionar erros à linha se houver
                 if erro_linha:
                     linha['erros'] = erro_linha
-                    erros.append({
-                        'ccb': ccb,
-                        'erros': erro_linha
-                    })
+                    erros.append({'ccb': ccb, 'erros': erro_linha})
                 
                 comissoes[str(ccb)] = linha
                 
             except Exception as e:
                 app.logger.error(f'Erro ao processar CCB {ccb}: {str(e)}')
                 erro_linha['geral'] = f'Erro geral: {str(e)}'
-                erros.append({
-                    'ccb': ccb,
-                    'erros': erro_linha
-                })
+                erros.append({'ccb': ccb, 'erros': erro_linha})
                 continue
                 
     except Exception as e:
         app.logger.error(f'Erro ao calcular comissões: {str(e)}')
         flash('Ocorreu um erro ao calcular as comissões, mas alguns dados foram processados.', 'warning')
     
-    # Armazenar erros na sessão para exibição posterior
     session['erros_comissoes'] = erros
-    
     return comissoes
 
 @app.route('/', methods=['GET', 'POST'])
