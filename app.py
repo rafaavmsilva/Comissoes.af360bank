@@ -458,8 +458,19 @@ def calcular_comissoes(dados: List[Dict]):
                     data_transacao = datetime.now()
                     erro_linha['data'] = 'Data não encontrada, usando data atual'
                 else:
-                    # Clean up date string
+                    # Clean up date string and handle datetime format
                     data_str = str(data_str).strip()
+                    
+                    # Handle datetime format (yyyy-mm-dd hh:mm:ss)
+                    if len(data_str) > 10 and '-' in data_str:
+                        try:
+                            data_transacao = datetime.strptime(data_str.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                            linha['Data'] = data_transacao.strftime('%d/%m/%Y')
+                            continue
+                        except ValueError:
+                            pass
+                    
+                    # Try other common formats
                     date_formats = [
                         '%d/%m/%Y',     # 31/12/2023
                         '%Y-%m-%d',     # 2023-12-31
@@ -474,13 +485,10 @@ def calcular_comissoes(dados: List[Dict]):
                         except ValueError:
                             continue
                     else:
-                        # If no format worked, try parsing Excel date number
-                        try:
-                            data_transacao = datetime(1899, 12, 30) + timedelta(days=float(data_str))
-                        except (ValueError, TypeError):
-                            data_transacao = datetime.now()
-                            erro_linha['data'] = f'Data inválida: {data_str}, usando data atual'
+                        data_transacao = datetime.now()
+                        erro_linha['data'] = f'Data inválida: {data_str}, usando data atual'
                 
+                # Always format the date consistently
                 linha['Data'] = data_transacao.strftime('%d/%m/%Y')
                 
             except Exception as e:
