@@ -164,8 +164,8 @@ def set_default_commission_config():
     date_threshold = datetime.strptime('28/01/2025', '%d/%m/%Y')
     current_date = datetime.now()
 
-    # Pre-2025 configuration
-    old_config = {
+    # Post 2025 configuration
+    new_config = {
         'BRAVE 1 - 50 a 250': {
             'tipo_comissao': 'percentual',
             'comissao_recebida': 31,
@@ -224,8 +224,8 @@ def set_default_commission_config():
         },
     }
 
-    # Post-2025 configuration
-    new_config = {
+    # Pre 2025 configuration
+    old_config = {
         'BRAVE 1 - 50 a 250': {
             'tipo_comissao': 'percentual',
             'comissao_recebida': 28,
