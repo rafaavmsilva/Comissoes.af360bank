@@ -450,14 +450,25 @@ def calcular_comissoes(dados: List[Dict]):
             ccb = linha.get("CCB", "")
             erro_linha = {}
             
-            # Parse transaction date
+            # Parse transaction date - Add more flexible date parsing
             data_str = linha.get('Data Digitacao', linha.get('Data Desembolso', ''))
             try:
-                data_transacao = datetime.strptime(data_str, '%d/%m/%Y')
-                linha['Data'] = data_transacao.strftime('%d/%m/%Y')
-            except ValueError:
+                # Try multiple date formats
+                for date_format in ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y']:
+                    try:
+                        data_transacao = datetime.strptime(data_str, date_format)
+                        linha['Data'] = data_transacao.strftime('%d/%m/%Y')
+                        break
+                    except ValueError:
+                        continue
+                else:
+                    # If no format worked, use current date
+                    data_transacao = datetime.now()
+                    erro_linha['data'] = f'Data inválida: {data_str}, usando data atual'
+                    linha['Data'] = data_transacao.strftime('%d/%m/%Y')
+            except Exception as e:
                 data_transacao = datetime.now()
-                erro_linha['data'] = 'Data inválida, usando data atual'
+                erro_linha['data'] = f'Erro ao processar data: {str(e)}'
                 linha['Data'] = data_transacao.strftime('%d/%m/%Y')
             
             # Validate CCB
