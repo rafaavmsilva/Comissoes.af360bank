@@ -458,37 +458,24 @@ def calcular_comissoes(dados: List[Dict]):
                     data_transacao = datetime.now()
                     erro_linha['data'] = 'Data não encontrada, usando data atual'
                 else:
-                    # Clean up date string and handle datetime format
+                    # Clean up date string
                     data_str = str(data_str).strip()
                     
-                    # Handle datetime format (yyyy-mm-dd hh:mm:ss)
+                    # Handle SQL datetime format (yyyy-mm-dd hh:mm:ss)
                     if len(data_str) > 10 and '-' in data_str:
                         try:
-                            data_transacao = datetime.strptime(data_str.split('.')[0], '%Y-%m-%d %H:%M:%S')
-                            linha['Data'] = data_transacao.strftime('%d/%m/%Y')
-                            continue
+                            data_transacao = datetime.strptime(data_str, '%Y-%m-%d %H:%M:%S')
                         except ValueError:
-                            pass
-                    
-                    # Try other common formats
-                    date_formats = [
-                        '%d/%m/%Y',     # 31/12/2023
-                        '%Y-%m-%d',     # 2023-12-31
-                        '%d-%m-%Y',     # 31-12-2023
-                        '%d.%m.%Y',     # 31.12.2023
-                    ]
-                    
-                    for fmt in date_formats:
-                        try:
-                            data_transacao = datetime.strptime(data_str, fmt)
-                            break
-                        except ValueError:
-                            continue
+                            data_transacao = datetime.now()
+                            erro_linha['data'] = f'Data inválida: {data_str}, usando data atual'
                     else:
-                        data_transacao = datetime.now()
-                        erro_linha['data'] = f'Data inválida: {data_str}, usando data atual'
+                        try:
+                            data_transacao = datetime.strptime(data_str, '%d/%m/%Y')
+                        except ValueError:
+                            data_transacao = datetime.now()
+                            erro_linha['data'] = f'Data inválida: {data_str}, usando data atual'
                 
-                # Always format the date consistently
+                # Set consistent date format
                 linha['Data'] = data_transacao.strftime('%d/%m/%Y')
                 
             except Exception as e:
