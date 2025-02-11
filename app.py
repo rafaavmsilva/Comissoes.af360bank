@@ -417,9 +417,13 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
             if config['tipo_comissao'] == 'percentual':
                 config['comissao_recebida'] = float(config.get('comissao_recebida', 0)) - 3
                 config['comissao_repassada'] = float(config.get('comissao_repassada', 0)) - 5
-            else:
-                config['comissao_fixa_recebida'] = float(config.get('comissao_fixa_recebida', 0)) - 95
-                config['comissao_fixa_repassada'] = float(config.get('comissao_fixa_repassada', 0)) - 150
+            elif config['tipo_comissao'] == 'fixa':
+                config['comissao_fixa_recebida'] = 1200  # Fixed pre-2025 value
+                config['comissao_fixa_repassada'] = 1050  # Fixed pre-2025 value
+        else:
+            if config['tipo_comissao'] == 'fixa':
+                config['comissao_fixa_recebida'] = 2295  # Fixed post-2025 value
+                config['comissao_fixa_repassada'] = 2295  # Fixed post-2025 value
                 
         return config
         
