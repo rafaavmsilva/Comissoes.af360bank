@@ -279,19 +279,21 @@
 
     <script>
         function formatCurrency(value) {
-            const roundedValue = Math.round(value * 100) / 100;
             return new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
                 currency: 'BRL',
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
-            }).format(roundedValue);
+            }).format(value);
         }
-
+    
         function parseMoneyValue(text) {
             if (!text) return 0;
             try {
-                const cleanText = text.replace(/[R$\s.]/g, '').replace(',', '.');
+                // Remove R$ and any spaces
+                text = text.replace('R$', '').trim();
+                // Replace dots with empty string and comma with dot
+                const cleanText = text.replace(/\./g, '').replace(',', '.');
                 const value = parseFloat(cleanText);
                 return isNaN(value) ? 0 : value;
             } catch (error) {
@@ -299,12 +301,12 @@
                 return 0;
             }
         }
-
+    
         function updateTotals() {
             const rows = document.querySelectorAll('table tbody tr');
             let totalContratos = rows.length;
             let totalRepassado = 0;
-
+    
             rows.forEach((row, index) => {
                 try {
                     const repasseText = row.cells[5].textContent.split('(')[0].trim();
@@ -314,11 +316,11 @@
                     console.error('Error processing row:', error, row);
                 }
             });
-
+    
             document.getElementById('total-contratos').textContent = totalContratos;
             document.getElementById('total-repassado').textContent = formatCurrency(totalRepassado);
         }
-
+    
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, updating totals...');
             try {
