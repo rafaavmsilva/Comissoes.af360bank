@@ -591,6 +591,13 @@ def comissoes():
         
         session['comissoes'] = comissoes
         
+        # Convert dict_values to list and sort
+        comissoes_list = list(comissoes.values())
+        comissoes_list.sort(key=lambda x: (
+            x.get('Usuario', x.get('Usuário', '')).lower(),
+            datetime.strptime(x.get('Data', '01/01/2000'), '%d/%m/%Y')
+        ))
+        
         # Get unique tables and users for filters
         tabelas = sorted(list(set(item.get('Tabela', '') for item in dados if item.get('Tabela'))))
         usuarios = sorted(list(set(item.get('Usuario', item.get('Usuário', '')) for item in dados if item.get('Usuario') or item.get('Usuário'))))
@@ -606,11 +613,8 @@ def comissoes():
         if erros:
             flash(f'Foram encontrados {len(erros)} problemas durante o processamento. Verifique os detalhes na tabela.', 'warning')
         
-        # Convert dict_values to list before passing to template
-        comissoes_list = list(comissoes.values())
-        
         return render_template('comissoes.html', 
-                             comissoes=comissoes_list, 
+                             comissoes=comissoes_list,  # Pass the sorted list
                              tabelas=tabelas,
                              usuarios=usuarios,
                              erros=erros,
