@@ -292,10 +292,10 @@
             try {
                 // Remove R$ and any spaces
                 text = text.replace('R$', '').trim();
-                // Replace dots with empty string and comma with dot
+                // Remove thousand separators (dots) and replace comma with dot
                 const cleanText = text.replace(/\./g, '').replace(',', '.');
                 const value = parseFloat(cleanText);
-                return isNaN(value) ? 0 : value;
+                return isNaN(value) ? 0 : value / 100; // Divide by 100 to fix the scale
             } catch (error) {
                 console.error('Error parsing money value:', error, text);
                 return 0;
