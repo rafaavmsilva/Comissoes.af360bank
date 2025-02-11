@@ -593,14 +593,25 @@ def comissoes():
         
         # Convert dict_values to list and sort
         comissoes_list = list(comissoes.values())
-        comissoes_list.sort(key=lambda x: (
-            x.get('Usuario', x.get('Usuário', '')).lower(),
-            datetime.strptime(x.get('Data', '01/01/2000'), '%d/%m/%Y')
-        ))
+        
+        # Safe sorting function
+        def get_sort_key(x):
+            # Get usuario value, defaulting to empty string if None
+            usuario = x.get('Usuario') or x.get('Usuário') or ''
+            # Get date value, defaulting to '01/01/2000' if None
+            data = x.get('Data') or '01/01/2000'
+            return (usuario.lower(), datetime.strptime(data, '%d/%m/%Y'))
+        
+        # Sort using the safe function
+        comissoes_list.sort(key=get_sort_key)
         
         # Get unique tables and users for filters
         tabelas = sorted(list(set(item.get('Tabela', '') for item in dados if item.get('Tabela'))))
-        usuarios = sorted(list(set(item.get('Usuario', item.get('Usuário', '')) for item in dados if item.get('Usuario') or item.get('Usuário'))))
+        usuarios = sorted(list(set(
+            item.get('Usuario', item.get('Usuário', '')) 
+            for item in dados 
+            if item.get('Usuario') or item.get('Usuário')
+        )))
         
         # Calculate totals
         total_bruto = sum(float(item.get('Valor Bruto', 0)) for item in comissoes.values())
@@ -614,7 +625,7 @@ def comissoes():
             flash(f'Foram encontrados {len(erros)} problemas durante o processamento. Verifique os detalhes na tabela.', 'warning')
         
         return render_template('comissoes.html', 
-                             comissoes=comissoes_list,  # Pass the sorted list
+                             comissoes=comissoes_list,
                              tabelas=tabelas,
                              usuarios=usuarios,
                              erros=erros,
