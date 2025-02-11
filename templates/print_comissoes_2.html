@@ -207,16 +207,9 @@
 <body>
     <div class="container">
         <div class="header-section" style="display: flex; align-items: center;">
-            <!-- Logo container (fixed) -->
             <div style="flex-shrink: 0;">
-                <img
-                    src="{{ url_for('static', filename='images/logo.png') }}"
-                    alt="Logo"
-                    style="height: 120px; width: auto; margin-right: -15px;"
-                />
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" style="height: 120px; width: auto; margin-right: -15px;" />
             </div>
-
-            <!-- Title container (flex-grow, centered) -->
             <div style="flex: 1; text-align: center;">
                 <h2 class="titulo" style="margin: 0;">Relatório de Comissões</h2>
             </div>
@@ -243,7 +236,7 @@
                         <th>CCB</th>
                         <th>Usuário</th>
                         <th>Cliente</th>
-                        <th>Valor</th>
+                        <th>Valor Líquido</th>
                         <th>Tabela</th>
                         <th>Repasse</th>
                     </tr>
@@ -259,7 +252,7 @@
                                         <th>CCB</th>
                                         <th>Usuário</th>
                                         <th>Cliente</th>
-                                        <th>Valor</th>
+                                        <th>Valor Líquido</th>
                                         <th>Tabela</th>
                                         <th>Repasse</th>
                                     </tr>
@@ -267,12 +260,15 @@
                                 <tbody>
                         {% endif %}
                         <tr>
-                            <td>{{ item.get('CCB', 'N/A') }}</td>
+                            <td>{{ item.get('CCB', 'N/A')|string|replace('.0', '') }}</td>
                             <td>{{ item.get('Usuário', item.get('Usuario', 'N/A')) }}</td>
                             <td>{{ item.get('Cliente', 'N/A') }}</td>
-                            <td>R$ {{ "%.2f"|format(item.get('Valor Bruto', 0)|float) }}</td>
+                            <td>R$ {{ "%.2f"|format(item.get('Valor Líquido', 0)|float) }}</td>
                             <td>{{ item.get('Tabela', 'N/A') }}</td>
-                            <td>R$ {{ "%.2f"|format(item.get('comissao_repassada_valor', 0)|float) }}</td>
+                            <td>
+                                R$ {{ "%.2f"|format(item.get('comissao_repassada_valor', 0)|float) }}
+                                ({{ "%.2f"|format(item.get('comissao_repassada_percentual', 0)) }}%)
+                            </td>
                         </tr>
                         {% set row_count = row_count + 1 %}
                     {% endfor %}
@@ -283,7 +279,6 @@
 
     <script>
         function formatCurrency(value) {
-            // Round to 2 decimal places before formatting
             const roundedValue = Math.round(value * 100) / 100;
             return new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
@@ -296,13 +291,9 @@
         function parseMoneyValue(text) {
             if (!text) return 0;
             try {
-                // Remove R$, spaces, dots, and convert comma to dot
                 const cleanText = text.replace(/[R$\s.]/g, '').replace(',', '.');
-                // Parse as float and ensure 2 decimal precision
                 const value = parseFloat(cleanText);
-                if (isNaN(value)) return 0;
-                // Return the parsed value directly
-                return value;
+                return isNaN(value) ? 0 : value;
             } catch (error) {
                 console.error('Error parsing money value:', error, text);
                 return 0;
@@ -316,41 +307,23 @@
 
             rows.forEach((row, index) => {
                 try {
-                    // Get repasse value (column 6)
-                    const repasseText = row.cells[5].textContent;
-                    const comissaoRepassada = parseMoneyValue(repasseText) / 100;
-                    
-                    // Use integer math to avoid floating point issues
-                    totalRepassado = Math.round((totalRepassado + comissaoRepassada) * 100) / 100;
-
-                    console.debug(`Row ${index + 1} values:`, {
-                        originalRepasse: repasseText,
-                        parsedRepasse: comissaoRepassada,
-                        runningTotalRepassado: totalRepassado
-                    });
+                    const repasseText = row.cells[5].textContent.split('(')[0].trim();
+                    const comissaoRepassada = parseMoneyValue(repasseText);
+                    totalRepassado += comissaoRepassada;
                 } catch (error) {
                     console.error('Error processing row:', error, row);
                 }
             });
 
-            // Update the totals display
             document.getElementById('total-contratos').textContent = totalContratos;
             document.getElementById('total-repassado').textContent = formatCurrency(totalRepassado);
-            
-            console.log('Final totals:', {
-                contratos: totalContratos,
-                repassado: formatCurrency(totalRepassado)
-            });
         }
 
-        // Wait for the DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, updating totals...');
             try {
                 updateTotals();
-                // Wait a moment for the totals to update before printing
                 setTimeout(() => {
-                    console.log('Triggering print...');
                     window.print();
                 }, 1000);
             } catch (error) {

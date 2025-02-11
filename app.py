@@ -1140,6 +1140,14 @@ def print_comissoes_2():
                 if user and user.lower() == selected_user.lower():
                     filtered_list.append(item)
             comissoes_list = filtered_list
+        
+        # Sort by usuario and date
+        def get_sort_key(x):
+            usuario = x.get('Usuario') or x.get('Usuário') or ''
+            data = x.get('Data') or '01/01/2000'
+            return (usuario.lower(), datetime.strptime(data, '%d/%m/%Y'))
+        
+        comissoes_list.sort(key=get_sort_key)
             
         if not comissoes_list:
             flash('Nenhuma comissão encontrada para o usuário selecionado.', 'error')
