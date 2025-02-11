@@ -441,6 +441,15 @@ def calcular_comissoes(dados: List[Dict]):
             # Parse transaction date
             data_str = linha.get('Data do Desembolso') or linha.get('Data Digitacao', '')
             
+            # Format CCB as integer string
+            ccb = str(int(float(linha.get("CCB", "0")))) if linha.get("CCB") else ""
+            erro_linha = {}
+            
+            # Format client name
+            nome = linha.get('Nome', '')
+            documento = linha.get('CPF/CNPJ', '')
+            linha['Cliente'] = format_client_name(nome, documento)
+            
             try:
                 if not data_str:
                     data_transacao = datetime.now()

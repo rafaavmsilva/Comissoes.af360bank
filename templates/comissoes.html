@@ -251,8 +251,8 @@
                         <tbody>
                             {% for item in comissoes %}
                             <tr class="{% if item.get('erros') %}warning{% endif %}">
-                                <td>{{ item.get('CCB', 'N/A') }}</td>
-                                <td>{{ item.get('Cliente', 'N/A') }}</td>
+                                <td>{{ item.get('CCB', 'N/A')|string|replace('.0', '') }}</td>
+                                <td>{{ item.get('Nome', item.get('Cliente', 'N/A')) }}</td>
                                 <td>{{ item.get('Usuario', item.get('Usuário', 'N/A')) }}</td>
                                 <td>{{ item.get('Tabela', 'N/A') }}</td>
                                 <td>{{ "R$ {:,.2f}".format(item.get('Valor Bruto', 0)).replace(',', '_').replace('.', ',').replace('_', '.') }}</td>
