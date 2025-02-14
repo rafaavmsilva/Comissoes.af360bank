@@ -107,12 +107,13 @@
             text-overflow: ellipsis;
         }
 
-        th:nth-child(1), td:nth-child(1) { width: 10%; } /* CCB */
-        th:nth-child(2), td:nth-child(2) { width: 15%; } /* Usuario */
-        th:nth-child(3), td:nth-child(3) { width: 25%; } /* Cliente */
-        th:nth-child(4), td:nth-child(4) { width: 15%; } /* Valor */
-        th:nth-child(5), td:nth-child(5) { width: 15%; } /* Tabela */
-        th:nth-child(6), td:nth-child(6) { width: 20%; } /* Repasse */
+        th:nth-child(1), td:nth-child(1) { width: 8%; }  /* CCB */
+        th:nth-child(2), td:nth-child(2) { width: 12%; } /* Usuario */
+        th:nth-child(3), td:nth-child(3) { width: 20%; } /* Cliente */
+        th:nth-child(4), td:nth-child(4) { width: 12%; } /* Valor */
+        th:nth-child(5), td:nth-child(5) { width: 12%; } /* Data */
+        th:nth-child(6), td:nth-child(6) { width: 16%; } /* Tabela */
+        th:nth-child(7), td:nth-child(7) { width: 20%; } /* Repasse */
 
         @media print {
             @page {
@@ -237,6 +238,7 @@
                         <th>Usuário</th>
                         <th>Cliente</th>
                         <th>Valor Líquido</th>
+                        <th>Data Desembolso</th>
                         <th>Tabela</th>
                         <th>Repasse</th>
                     </tr>
@@ -253,6 +255,7 @@
                                         <th>Usuário</th>
                                         <th>Cliente</th>
                                         <th>Valor Líquido</th>
+                                        <th>Data Desembolso</th>
                                         <th>Tabela</th>
                                         <th>Repasse</th>
                                     </tr>
@@ -264,6 +267,7 @@
                             <td>{{ item.get('Usuário', item.get('Usuario', 'N/A')) }}</td>
                             <td>{{ item.get('Cliente', 'N/A') }}</td>
                             <td>R$ {{ "%.2f"|format(item.get('Valor Líquido', 0)|float) }}</td>
+                            <td>{{ item.get('Data do Desembolso', item.get('Data Desembolso', 'N/A')) }}</td>
                             <td>{{ item.get('Tabela', 'N/A') }}</td>
                             <td>
                                 R$ {{ "%.2f"|format(item.get('comissao_repassada_valor', 0)|float) }}
