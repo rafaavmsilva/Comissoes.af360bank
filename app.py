@@ -283,10 +283,17 @@ def set_default_commission_config():
             'valor_maximo': float('inf')
         },
     }
-    # Store both configs in session
-    session['new_config'] = new_config
-    session['old_config'] = old_config
-    
+    # Common configuration
+    common_config = {
+        'NÃO COMISSIONADO': {
+            'tipo_comissao': 'percentual',
+            'comissao_recebida': 0,
+            'comissao_repassada': 0,
+            'valor_minimo': 0,
+            'valor_maximo': float('inf')
+        }
+    }
+
     # Select configuration based on date
     base_config = old_config if current_date < date_threshold else new_config
     
