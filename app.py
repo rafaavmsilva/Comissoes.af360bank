@@ -378,8 +378,125 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
     try:
         DATE_THRESHOLD = datetime.strptime('28/01/2025', '%d/%m/%Y')
         
-        # Get the tabela_config from session
-        tabela_config = session.get('tabela_config', {})
+        # Post 2025 configuration
+        new_config = {
+            'BRAVE 1 - 50 a 250': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 31,
+                'comissao_repassada': 31,
+                'valor_minimo': 50,
+                'valor_maximo': 250
+            },
+            'BRAVE 2 - 250,01 - 3800': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 27,
+                'comissao_repassada': 27,
+                'valor_minimo': 250.01,
+                'valor_maximo': 3800
+            },
+            'BRAVE 3 - 3800,01 - 30.000': {
+                'tipo_comissao': 'fixa',
+                'comissao_fixa_recebida': 2295,
+                'comissao_fixa_repassada': 2295,
+                'valor_minimo': 3800.01,
+                'valor_maximo': 30000
+            },
+            'BRAVE DIFERENCIADA - COM REDUÇÃO': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 8,
+                'comissao_repassada': 8,
+                'valor_minimo': 0,
+                'valor_maximo': float('inf')
+            },
+            'VIA INVEST 1 - 75 A 250': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 26,
+                'comissao_repassada': 26,
+                'valor_minimo': 75,
+                'valor_maximo': 250
+            },
+            'VIA INVEST 2 - 250,01 A 1.000': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 21,
+                'comissao_repassada': 21,
+                'valor_minimo': 250.01,
+                'valor_maximo': 1000
+            },
+            'VIA INVEST 3 - 1.000,01 A 30.000': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 15,
+                'comissao_repassada': 15,
+                'valor_minimo': 1000.01,
+                'valor_maximo': 30000
+            },
+            'VIA INVEST DIF - COM REDUÇAO': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 12,
+                'comissao_repassada': 12,
+                'valor_minimo': 0,
+                'valor_maximo': float('inf')
+            }
+        }
+
+        # Pre 2025 configuration
+        old_config = {
+            'BRAVE 1 - 50 a 250': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 28,
+                'comissao_repassada': 26,
+                'valor_minimo': 50,
+                'valor_maximo': 250
+            },
+            'BRAVE 2 - 250,01 - 3800': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 24,
+                'comissao_repassada': 22,
+                'valor_minimo': 250.01,
+                'valor_maximo': 3800
+            },
+            'BRAVE 3 - 3800,01 - 30.000': {
+                'tipo_comissao': 'fixa',
+                'comissao_fixa_recebida': 1200,
+                'comissao_fixa_repassada': 1050,
+                'valor_minimo': 3800.01,
+                'valor_maximo': 30000
+            },
+            'BRAVE DIFERENCIADA - COM REDUÇÃO': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 8,
+                'comissao_repassada': 6,
+                'valor_minimo': 0,
+                'valor_maximo': float('inf')
+            },
+            'VIA INVEST 1 - 75 A 250': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 26,
+                'comissao_repassada': 24,
+                'valor_minimo': 75,
+                'valor_maximo': 250
+            },
+            'VIA INVEST 2 - 250,01 A 1.000': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 21,
+                'comissao_repassada': 19,
+                'valor_minimo': 250.01,
+                'valor_maximo': 1000
+            },
+            'VIA INVEST 3 - 1.000,01 A 30.000': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 15,
+                'comissao_repassada': 13,
+                'valor_minimo': 1000.01,
+                'valor_maximo': 30000
+            },
+            'VIA INVEST DIF - COM REDUÇAO': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 10,
+                'comissao_repassada': 8,
+                'valor_minimo': 0,
+                'valor_maximo': float('inf')
+            }
+        }
 
         # Default config
         default_config = {
@@ -388,6 +505,21 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
             'comissao_repassada': 0,
             'nome_tabela': tabela
         }
+
+        # Select config based on date
+        tabela_config = old_config if data_transacao and data_transacao < DATE_THRESHOLD else new_config
+
+        # Add common config
+        common_config = {
+            'NÃO COMISSIONADO': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 0,
+                'comissao_repassada': 0,
+                'valor_minimo': 0,
+                'valor_maximo': float('inf')
+            }
+        }
+        tabela_config.update(common_config)
         
         # Get base config from table
         config = None
