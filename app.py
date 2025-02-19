@@ -411,19 +411,14 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
         if not config:
             return default_config
             
-        # Adjust commission rates based on date
         if data_transacao and data_transacao <= DATE_THRESHOLD:
-            # Pre-2025 rates
-            if config['tipo_comissao'] == 'percentual':
-                config['comissao_recebida'] = float(config.get('comissao_recebida', 0)) - 3
-                config['comissao_repassada'] = float(config.get('comissao_repassada', 0)) - 5
-            elif config['tipo_comissao'] == 'fixa':
-                config['comissao_fixa_recebida'] = 1200  # Fixed pre-2025 value
-                config['comissao_fixa_repassada'] = 1050  # Fixed pre-2025 value
-        else:
-            if config['tipo_comissao'] == 'fixa':
-                config['comissao_fixa_recebida'] = 2295  # Fixed post-2025 value
-                config['comissao_fixa_repassada'] = 2295  # Fixed post-2025 value
+            if tabela in tabela_config:
+                old_config = session.get('tabela_config', {}).get(tabela, {})
+                config['comissao_recebida'] = old_config.get('comissao_recebida', 0)
+                config['comissao_repassada'] = old_config.get('comissao_repassada', 0)
+                if config['tipo_comissao'] == 'fixa':
+                    config['comissao_fixa_recebida'] = 1200
+                    config['comissao_fixa_repassada'] = 1050
                 
         return config
         
