@@ -378,16 +378,9 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
     try:
         DATE_THRESHOLD = datetime.strptime('28/01/2025', '%d/%m/%Y')
         
-        # Load both configs from session
-        new_config = session.get('new_config', {})
-        old_config = session.get('old_config', {})
-        
-        # Get the correct config based on date
-        if data_transacao and data_transacao <= DATE_THRESHOLD:
-            tabela_config = old_config  # Use pre-2025 config
-        else:
-            tabela_config = new_config  # Use post-2025 config
-            
+        # Get the tabela_config from session
+        tabela_config = session.get('tabela_config', {})
+
         # Default config
         default_config = {
             'tipo_comissao': 'percentual',
