@@ -283,17 +283,10 @@ def set_default_commission_config():
             'valor_maximo': float('inf')
         },
     }
-    # Common configuration
-    common_config = {
-        'NÃO COMISSIONADO': {
-            'tipo_comissao': 'percentual',
-            'comissao_recebida': 0,
-            'comissao_repassada': 0,
-            'valor_minimo': 0,
-            'valor_maximo': float('inf')
-        }
-    }
-
+    # Store both configs in session
+    session['new_config'] = new_config
+    session['old_config'] = old_config
+    
     # Select configuration based on date
     base_config = old_config if current_date < date_threshold else new_config
     
@@ -376,9 +369,18 @@ def format_client_name(nome: str, documento: str) -> str:
 def get_table_config(tabela: str, valor: float = None, data_transacao: datetime = None):
     """Get commission configuration for a table based on value range and date."""
     try:
-        tabela_config = session.get('tabela_config', {})
         DATE_THRESHOLD = datetime.strptime('28/01/2025', '%d/%m/%Y')
         
+        # Load both configs from session
+        new_config = session.get('new_config', {})
+        old_config = session.get('old_config', {})
+        
+        # Get the correct config based on date
+        if data_transacao and data_transacao <= DATE_THRESHOLD:
+            tabela_config = old_config  # Use pre-2025 config
+        else:
+            tabela_config = new_config  # Use post-2025 config
+            
         # Default config
         default_config = {
             'tipo_comissao': 'percentual',
@@ -411,15 +413,6 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
         if not config:
             return default_config
             
-        if data_transacao and data_transacao <= DATE_THRESHOLD:
-            if tabela in tabela_config:
-                old_config = session.get('tabela_config', {}).get(tabela, {})
-                config['comissao_recebida'] = old_config.get('comissao_recebida', 0)
-                config['comissao_repassada'] = old_config.get('comissao_repassada', 0)
-                if config['tipo_comissao'] == 'fixa':
-                    config['comissao_fixa_recebida'] = 1200
-                    config['comissao_fixa_repassada'] = 1050
-                
         return config
         
     except Exception as e:
