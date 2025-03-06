@@ -376,9 +376,56 @@ def format_client_name(nome: str, documento: str) -> str:
 def get_table_config(tabela: str, valor: float = None, data_transacao: datetime = None):
     """Get commission configuration for a table based on value range and date."""
     try:
-        DATE_THRESHOLD = datetime.strptime('28/01/2025', '%d/%m/%Y')
+        JANUARY_THRESHOLD = datetime.strptime('28/01/2025', '%d/%m/%Y')
+        MARCH_THRESHOLD = datetime.strptime('01/03/2025', '%d/%m/%Y')
         
-        # Post 2025 configuration
+        # Post March 2025 configuration
+        march_config = {
+            'VIA INVEST 1 - 50 A 250': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 30,
+                'comissao_repassada': 30,
+                'valor_minimo': 50,
+                'valor_maximo': 250
+            },
+            'VIA INVEST - REDUZIDA 1': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 12,
+                'comissao_repassada': 12,
+                'valor_minimo': 50,
+                'valor_maximo': 250
+            },
+            'VIA INVEST 2 - 250,01 A 550,00': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 26,
+                'comissao_repassada': 26,
+                'valor_minimo': 250.01,
+                'valor_maximo': 550
+            },
+            'VIA INVEST - REDUZIDA 2': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 8,
+                'comissao_repassada': 8,
+                'valor_minimo': 250.01,
+                'valor_maximo': 550
+            },
+            'VIA INVEST 3 - 550,01 A 30.000': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 19,
+                'comissao_repassada': 19,
+                'valor_minimo': 550.01,
+                'valor_maximo': 30000
+            },
+            'VIA INVEST - REDUZIDA 3': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 4,
+                'comissao_repassada': 4,
+                'valor_minimo': 550.01,
+                'valor_maximo': 30000
+            }
+        }
+
+        # January to March 2025 configuration
         new_config = {
             'BRAVE 1 - 50 a 250': {
                 'tipo_comissao': 'percentual',
@@ -438,7 +485,7 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
             }
         }
 
-        # Pre 2025 configuration
+        # Pre January 2025 configuration
         old_config = {
             'BRAVE 1 - 50 a 250': {
                 'tipo_comissao': 'percentual',
@@ -507,7 +554,15 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
         }
 
         # Select config based on date
-        tabela_config = old_config if data_transacao and data_transacao < DATE_THRESHOLD else new_config
+        if data_transacao:
+            if data_transacao >= MARCH_THRESHOLD:
+                tabela_config = march_config
+            elif data_transacao >= JANUARY_THRESHOLD:
+                tabela_config = new_config
+            else:
+                tabela_config = old_config
+        else:
+            tabela_config = new_config  # default to new config if no date provided
 
         # Add common config
         common_config = {
