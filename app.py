@@ -414,7 +414,7 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
             '9,50% - 57878-TOP FLEX': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 9.5,
-                'comissao_repassada': 4,
+                'comissao_repassada': 9.5,
                 'valor_minimo': 50,
                 'valor_maximo': 30000
             },
