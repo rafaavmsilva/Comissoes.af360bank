@@ -378,7 +378,146 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
     try:
         JANUARY_THRESHOLD = datetime.strptime('28/01/2025', '%d/%m/%Y')
         MARCH_THRESHOLD = datetime.strptime('01/03/2025', '%d/%m/%Y')
+        APRIL_THRESHOLD = datetime.strptime('01/04/2025', '%d/%m/%Y')
         
+        # Post april 2025 configuration
+
+        april_config = {
+            '4% - AF REDUZIDA 3': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 4,
+                'comissao_repassada': 4,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '6% - AF REDUZIDA 2': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 6,
+                'comissao_repassada': 6,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '8% - AF REDUZIDA 1': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 8,
+                'comissao_repassada': 8,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '8% - 57886-LIGHT FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 8,
+                'comissao_repassada': 8,
+                'valor_minimo': 100,
+                'valor_maximo': 30000
+            },
+            '9,50% - 57878-TOP FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 9.5,
+                'comissao_repassada': 4,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '12% - 57851-PLUS+ FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 12,
+                'comissao_repassada': 12,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '14% - 53694-PRIME FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 14,
+                'comissao_repassada': 14,
+                'valor_minimo': 900,
+                'valor_maximo': 30000
+            },
+            '17,50% - 53287-OURO+ FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 17.5,
+                'comissao_repassada': 17.5,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '19% - 57924-SPEED FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 19,
+                'comissao_repassada': 19,
+                'valor_minimo': 300,
+                'valor_maximo': 1000
+            },
+            '19% - 60119-POWER': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 19,
+                'comissao_repassada': 19,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '21% - 60151-PLUS': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 21,
+                'comissao_repassada': 21,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '23% - 60127-MEGA POWER': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 23,
+                'comissao_repassada': 23,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '25% - 53236-RN': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 25,
+                'comissao_repassada': 25,
+                'valor_minimo': 50,
+                'valor_maximo': 5000
+            },
+            '25,50% - 57916-ULTRA POWER': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 25.5,
+                'comissao_repassada': 25.5,
+                'valor_minimo': 50,
+                'valor_maximo': 2000
+            },
+            '28% - 60135-TITANIUM': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 28,
+                'comissao_repassada': 28,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '30% - 60100-SMART TURBO': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 30,
+                'comissao_repassada': 30,
+                'valor_minimo': 210,
+                'valor_maximo': 250
+            },
+            '33% - 60097-SMART VIP': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 33,
+                'comissao_repassada': 33,
+                'valor_minimo': 170,
+                'valor_maximo': 210
+            },
+            '42% - 60089-SMART FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 42,
+                'comissao_repassada': 42,
+                'valor_minimo': 130,
+                'valor_maximo': 170
+            },
+            '51% - 60070-SMART LIGHT': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 51,
+                'comissao_repassada': 51,
+                'valor_minimo': 50,
+                'valor_maximo': 130
+            },
+
+        }
         # Post March 2025 configuration
         march_config = {
             'VIA INVEST 1 - 50 A 250': {
@@ -555,14 +694,16 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
 
         # Select config based on date
         if data_transacao:
-            if data_transacao >= MARCH_THRESHOLD:
+            if data_transacao >= APRIL_THRESHOLD:
+                tabela_config = april_config
+            elif data_transacao >= MARCH_THRESHOLD:
                 tabela_config = march_config
             elif data_transacao >= JANUARY_THRESHOLD:
                 tabela_config = new_config
             else:
                 tabela_config = old_config
         else:
-            tabela_config = new_config  # default to new config if no date provided
+            tabela_config = new_config  # Default to new config if no date provided
 
         # Add common config
         common_config = {
@@ -575,7 +716,7 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
             }
         }
         tabela_config.update(common_config)
-        
+
         # Get base config from table
         config = None
         if tabela in tabela_config:
@@ -585,10 +726,10 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
             for nome_tabela, cfg in tabela_config.items():
                 if ('DIFERENCIADA' in tabela or 'DIF' in tabela) != ('DIFERENCIADA' in nome_tabela or 'DIF' in nome_tabela):
                     continue
-                    
+
                 mesma_empresa = (tabela.startswith('BRAVE') and nome_tabela.startswith('BRAVE')) or \
-                              (tabela.startswith('VIA') and nome_tabela.startswith('VIA'))
-                
+                                (tabela.startswith('VIA') and nome_tabela.startswith('VIA'))
+
                 if mesma_empresa and valor:
                     valor_minimo = float(cfg.get('valor_minimo', 0))
                     valor_maximo = float(cfg.get('valor_maximo', float('inf')))
@@ -596,15 +737,25 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                         config = cfg.copy()
                         config['nome_tabela'] = nome_tabela
                         break
-        
+
         if not config:
-            return default_config
-            
+            return {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 0,
+                'comissao_repassada': 0,
+                'nome_tabela': tabela
+            }
+
         return config
-        
+
     except Exception as e:
         app.logger.error(f'Erro ao obter configuração da tabela {tabela}: {str(e)}')
-        return default_config
+        return {
+            'tipo_comissao': 'percentual',
+            'comissao_recebida': 0,
+            'comissao_repassada': 0,
+            'nome_tabela': tabela
+        }
 
 def calcular_comissoes(dados: List[Dict]):
     """Calculate commissions based on provided data and table configurations."""
