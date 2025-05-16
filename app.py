@@ -390,7 +390,21 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                 'valor_minimo': 50,
                 'valor_maximo': 30000
             },
+            'AF REDUZIDA 3': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 4,
+                'comissao_repassada': 4,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
             '6% - AF REDUZIDA 2': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 6,
+                'comissao_repassada': 6,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            'AF REDUZIDA 2': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 6,
                 'comissao_repassada': 6,
@@ -404,7 +418,21 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                 'valor_minimo': 50,
                 'valor_maximo': 30000
             },
+            'AF REDUZIDA 1': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 8,
+                'comissao_repassada': 8,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
             '8% - 57886-LIGHT FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 8,
+                'comissao_repassada': 8,
+                'valor_minimo': 100,
+                'valor_maximo': 30000
+            },
+            '57886-LIGHT FLEX': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 8,
                 'comissao_repassada': 8,
@@ -418,7 +446,21 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                 'valor_minimo': 50,
                 'valor_maximo': 30000
             },
+            '57878-TOP FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 9.5,
+                'comissao_repassada': 9.5,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
             '12% - 57851-PLUS+ FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 12,
+                'comissao_repassada': 12,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '57851-PLUS+ FLEX': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 12,
                 'comissao_repassada': 12,
@@ -432,7 +474,21 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                 'valor_minimo': 900,
                 'valor_maximo': 30000
             },
+            '53694-PRIME FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 14,
+                'comissao_repassada': 14,
+                'valor_minimo': 900,
+                'valor_maximo': 30000
+            },
             '17,50% - 53287-OURO+ FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 17.5,
+                'comissao_repassada': 17.5,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '53287-OURO+ FLEX': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 17.5,
                 'comissao_repassada': 17.5,
@@ -446,7 +502,21 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                 'valor_minimo': 300,
                 'valor_maximo': 1000
             },
+            '57924-SPEED FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 19,
+                'comissao_repassada': 19,
+                'valor_minimo': 300,
+                'valor_maximo': 1000
+            },
             '19% - 60119-POWER': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 19,
+                'comissao_repassada': 19,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '60119-POWER': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 19,
                 'comissao_repassada': 19,
@@ -460,7 +530,21 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                 'valor_minimo': 50,
                 'valor_maximo': 30000
             },
+            '60151-PLUS': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 21,
+                'comissao_repassada': 21,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
             '23% - 60127-MEGA POWER': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 23,
+                'comissao_repassada': 23,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '60127-MEGA POWER': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 23,
                 'comissao_repassada': 23,
@@ -474,7 +558,21 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                 'valor_minimo': 50,
                 'valor_maximo': 5000
             },
+            '53236-RN': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 25,
+                'comissao_repassada': 25,
+                'valor_minimo': 50,
+                'valor_maximo': 5000
+            },
             '25,50% - 57916-ULTRA POWER': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 25.5,
+                'comissao_repassada': 25.5,
+                'valor_minimo': 50,
+                'valor_maximo': 2000
+            },
+            '57916-ULTRA POWER': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 25.5,
                 'comissao_repassada': 25.5,
@@ -488,7 +586,21 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                 'valor_minimo': 50,
                 'valor_maximo': 30000
             },
+            '60135-TITANIUM': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 28,
+                'comissao_repassada': 28,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
             '30% - 60100-SMART TURBO': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 30,
+                'comissao_repassada': 30,
+                'valor_minimo': 210,
+                'valor_maximo': 250
+            },
+            '60100-SMART TURBO': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 30,
                 'comissao_repassada': 30,
@@ -502,6 +614,13 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                 'valor_minimo': 170,
                 'valor_maximo': 210
             },
+            '60097-SMART VIP': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 33,
+                'comissao_repassada': 33,
+                'valor_minimo': 170,
+                'valor_maximo': 210
+            },
             '42% - 60089-SMART FLEX': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 42,
@@ -509,7 +628,21 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                 'valor_minimo': 130,
                 'valor_maximo': 170
             },
+            '60089-SMART FLEX': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 42,
+                'comissao_repassada': 42,
+                'valor_minimo': 130,
+                'valor_maximo': 170
+            },
             '51% - 60070-SMART LIGHT': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 51,
+                'comissao_repassada': 51,
+                'valor_minimo': 50,
+                'valor_maximo': 130
+            },
+            '60070-SMART LIGHT': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 51,
                 'comissao_repassada': 51,
