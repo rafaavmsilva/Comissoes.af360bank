@@ -381,7 +381,6 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
         APRIL_THRESHOLD = datetime.strptime('01/04/2025', '%d/%m/%Y')
         
         # Post april 2025 configuration
-
         april_config = {
             '4% - AF REDUZIDA 3': {
                 'tipo_comissao': 'percentual',
@@ -422,6 +421,69 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 8,
                 'comissao_repassada': 8,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '1210-AF MASTER': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 51,
+                'comissao_repassada': 31,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '1211-AF PLUS': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 42,
+                'comissao_repassada': 31,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '1213-AF VIP': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 33,
+                'comissao_repassada': 31,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '1214-AF TURBO': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 30,
+                'comissao_repassada': 30,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '1215-AF POWER': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 19,
+                'comissao_repassada': 19,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '1216-AF FLEX 1': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 12,
+                'comissao_repassada': 12,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '1217-AF FLEX 2': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 8,
+                'comissao_repassada': 8,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '1218-AF FLEX 3': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 6,
+                'comissao_repassada': 6,
+                'valor_minimo': 50,
+                'valor_maximo': 30000
+            },
+            '1219-AF FLEX 4': {
+                'tipo_comissao': 'percentual',
+                'comissao_recebida': 4,
+                'comissao_repassada': 4,
                 'valor_minimo': 50,
                 'valor_maximo': 30000
             },
