@@ -427,21 +427,21 @@ def get_table_config(tabela: str, valor: float = None, data_transacao: datetime 
             '1210-AF MASTER': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 51,
-                'comissao_repassada': 31,
+                'comissao_repassada': 51,
                 'valor_minimo': 50,
                 'valor_maximo': 30000
             },
             '1211-AF PLUS': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 42,
-                'comissao_repassada': 31,
+                'comissao_repassada':42,
                 'valor_minimo': 50,
                 'valor_maximo': 30000
             },
             '1213-AF VIP': {
                 'tipo_comissao': 'percentual',
                 'comissao_recebida': 33,
-                'comissao_repassada': 31,
+                'comissao_repassada': 33,
                 'valor_minimo': 50,
                 'valor_maximo': 30000
             },
